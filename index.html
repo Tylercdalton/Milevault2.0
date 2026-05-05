@@ -1,0 +1,3166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MileVault Pro</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#007AFF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MileVault">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel">
+
+// iOS.jsx — Simplified iOS 26 (Liquid Glass) device frame
+// Based on the iOS 26 UI Kit + Figma status bar spec. No assets, no deps.
+// Exports: IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard
+
+// ─────────────────────────────────────────────────────────────
+// Status bar
+// ─────────────────────────────────────────────────────────────
+function IOSStatusBar({ dark = false, time = '9:41' }) {
+  const c = dark ? '#fff' : '#000';
+  return (
+    <div style={{
+      display: 'flex', gap: 154, alignItems: 'center', justifyContent: 'center',
+      padding: '21px 24px 19px', boxSizing: 'border-box',
+      position: 'relative', zIndex: 20, width: '100%',
+    }}>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: 1.5 }}>
+        <span style={{
+          fontFamily: '-apple-system, "SF Pro", system-ui', fontWeight: 590,
+          fontSize: 17, lineHeight: '22px', color: c,
+        }}>{time}</span>
+      </div>
+      <div style={{ flex: 1, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, paddingTop: 1, paddingRight: 1 }}>
+        <svg width="19" height="12" viewBox="0 0 19 12">
+          <rect x="0" y="7.5" width="3.2" height="4.5" rx="0.7" fill={c}/>
+          <rect x="4.8" y="5" width="3.2" height="7" rx="0.7" fill={c}/>
+          <rect x="9.6" y="2.5" width="3.2" height="9.5" rx="0.7" fill={c}/>
+          <rect x="14.4" y="0" width="3.2" height="12" rx="0.7" fill={c}/>
+        </svg>
+        <svg width="17" height="12" viewBox="0 0 17 12">
+          <path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z" fill={c}/>
+          <path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z" fill={c}/>
+          <circle cx="8.5" cy="10.5" r="1.5" fill={c}/>
+        </svg>
+        <svg width="27" height="13" viewBox="0 0 27 13">
+          <rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke={c} strokeOpacity="0.35" fill="none"/>
+          <rect x="2" y="2" width="20" height="9" rx="2" fill={c}/>
+          <path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill={c} fillOpacity="0.4"/>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Liquid glass pill — blur + tint + shine
+// ─────────────────────────────────────────────────────────────
+function IOSGlassPill({ children, dark = false, style = {} }) {
+  return (
+    <div style={{
+      height: 44, minWidth: 44, borderRadius: 9999,
+      position: 'relative', overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: dark
+        ? '0 2px 6px rgba(0,0,0,0.35), 0 6px 16px rgba(0,0,0,0.2)'
+        : '0 1px 3px rgba(0,0,0,0.07), 0 3px 10px rgba(0,0,0,0.06)',
+      ...style,
+    }}>
+      {/* blur + tint */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.28)' : 'rgba(255,255,255,0.5)',
+      }} />
+      {/* shine */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 9999,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15), inset -1px -1px 1px rgba(255,255,255,0.08)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', padding: '0 4px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Navigation bar — glass pills + large title
+// ─────────────────────────────────────────────────────────────
+function IOSNavBar({ title = 'Title', dark = false, trailingIcon = true }) {
+  const muted = dark ? 'rgba(255,255,255,0.6)' : '#404040';
+  const text = dark ? '#fff' : '#000';
+  const pillIcon = (content) => (
+    <IOSGlassPill dark={dark}>
+      <div style={{ width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {content}
+      </div>
+    </IOSGlassPill>
+  );
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 10,
+      paddingTop: 62, paddingBottom: 10, position: 'relative', zIndex: 5,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 16px',
+      }}>
+        {/* back chevron */}
+        {pillIcon(
+          <svg width="12" height="20" viewBox="0 0 12 20" fill="none" style={{ marginLeft: -1 }}>
+            <path d="M10 2L2 10l8 8" stroke={muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+        {/* trailing ellipsis */}
+        {trailingIcon && pillIcon(
+          <svg width="22" height="6" viewBox="0 0 22 6">
+            <circle cx="3" cy="3" r="2.5" fill={muted}/>
+            <circle cx="11" cy="3" r="2.5" fill={muted}/>
+            <circle cx="19" cy="3" r="2.5" fill={muted}/>
+          </svg>
+        )}
+      </div>
+      {/* large title */}
+      <div style={{
+        padding: '0 16px',
+        fontFamily: '-apple-system, system-ui',
+        fontSize: 34, fontWeight: 700, lineHeight: '41px',
+        color: text, letterSpacing: 0.4,
+      }}>{title}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Grouped list (inset card, r:26) + row (52px)
+// ─────────────────────────────────────────────────────────────
+function IOSListRow({ title, detail, icon, chevron = true, isLast = false, dark = false }) {
+  const text = dark ? '#fff' : '#000';
+  const sec = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const ter = dark ? 'rgba(235,235,245,0.3)' : 'rgba(60,60,67,0.3)';
+  const sep = dark ? 'rgba(84,84,88,0.65)' : 'rgba(60,60,67,0.12)';
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', minHeight: 52,
+      padding: '0 16px', position: 'relative',
+      fontFamily: '-apple-system, system-ui', fontSize: 17,
+      letterSpacing: -0.43,
+    }}>
+      {icon && (
+        <div style={{
+          width: 30, height: 30, borderRadius: 7, background: icon,
+          marginRight: 12, flexShrink: 0,
+        }} />
+      )}
+      <div style={{ flex: 1, color: text }}>{title}</div>
+      {detail && <span style={{ color: sec, marginRight: 6 }}>{detail}</span>}
+      {chevron && (
+        <svg width="8" height="14" viewBox="0 0 8 14" style={{ flexShrink: 0 }}>
+          <path d="M1 1l6 6-6 6" stroke={ter} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+      {!isLast && (
+        <div style={{
+          position: 'absolute', bottom: 0, right: 0,
+          left: icon ? 58 : 16, height: 0.5, background: sep,
+        }} />
+      )}
+    </div>
+  );
+}
+
+function IOSList({ header, children, dark = false }) {
+  const hc = dark ? 'rgba(235,235,245,0.6)' : 'rgba(60,60,67,0.6)';
+  const bg = dark ? '#1C1C1E' : '#fff';
+  return (
+    <div>
+      {header && (
+        <div style={{
+          fontFamily: '-apple-system, system-ui', fontSize: 13,
+          color: hc, textTransform: 'uppercase',
+          padding: '8px 36px 6px', letterSpacing: -0.08,
+        }}>{header}</div>
+      )}
+      <div style={{
+        background: bg, borderRadius: 26,
+        margin: '0 16px', overflow: 'hidden',
+      }}>{children}</div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Device frame
+// ─────────────────────────────────────────────────────────────
+function IOSDevice({
+  children, width = 402, height = 874, dark = false,
+  title, keyboard = false,
+}) {
+  return (
+    <div style={{
+      width, height, borderRadius: 48, overflow: 'hidden',
+      position: 'relative', background: dark ? '#000' : '#F2F2F7',
+      boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
+      fontFamily: '-apple-system, system-ui, sans-serif',
+      WebkitFontSmoothing: 'antialiased',
+    }}>
+      {/* dynamic island */}
+      <div style={{
+        position: 'absolute', top: 11, left: '50%', transform: 'translateX(-50%)',
+        width: 126, height: 37, borderRadius: 24, background: '#000', zIndex: 50,
+      }} />
+      {/* status bar (absolute) */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
+        <IOSStatusBar dark={dark} />
+      </div>
+      {/* nav + content */}
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        {title !== undefined && <IOSNavBar title={title} dark={dark} />}
+        <div style={{ flex: 1, overflow: 'auto' }}>{children}</div>
+        {keyboard && <IOSKeyboard dark={dark} />}
+      </div>
+      {/* home indicator — always on top */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 60,
+        height: 34, display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+        paddingBottom: 8, pointerEvents: 'none',
+      }}>
+        <div style={{
+          width: 139, height: 5, borderRadius: 100,
+          background: dark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.25)',
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Keyboard — iOS 26 liquid glass
+// ─────────────────────────────────────────────────────────────
+function IOSKeyboard({ dark = false }) {
+  const glyph = dark ? 'rgba(255,255,255,0.7)' : '#595959';
+  const sugg = dark ? 'rgba(255,255,255,0.6)' : '#333';
+  const keyBg = dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.85)';
+
+  // special-key icons
+  const icons = {
+    shift: <svg width="19" height="17" viewBox="0 0 19 17"><path d="M9.5 1L1 9.5h4.5V16h8V9.5H18L9.5 1z" fill={glyph}/></svg>,
+    del: <svg width="23" height="17" viewBox="0 0 23 17"><path d="M7 1h13a2 2 0 012 2v11a2 2 0 01-2 2H7l-6-7.5L7 1z" fill="none" stroke={glyph} strokeWidth="1.6" strokeLinejoin="round"/><path d="M10 5l7 7M17 5l-7 7" stroke={glyph} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+    ret: <svg width="20" height="14" viewBox="0 0 20 14"><path d="M18 1v6H4m0 0l4-4M4 7l4 4" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  };
+
+  const key = (content, { w, flex, ret, fs = 25, k } = {}) => (
+    <div key={k} style={{
+      height: 42, borderRadius: 8.5,
+      flex: flex ? 1 : undefined, width: w, minWidth: 0,
+      background: ret ? '#08f' : keyBg,
+      boxShadow: '0 1px 0 rgba(0,0,0,0.075)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: '-apple-system, "SF Compact", system-ui',
+      fontSize: fs, fontWeight: 458, color: ret ? '#fff' : glyph,
+    }}>{content}</div>
+  );
+
+  const row = (keys, pad = 0) => (
+    <div style={{ display: 'flex', gap: 6.5, justifyContent: 'center', padding: `0 ${pad}px` }}>
+      {keys.map(l => key(l, { flex: true, k: l }))}
+    </div>
+  );
+
+  return (
+    <div style={{
+      position: 'relative', zIndex: 15, borderRadius: 27, overflow: 'hidden',
+      padding: '11px 0 2px',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      boxShadow: dark
+        ? '0 -2px 20px rgba(0,0,0,0.09)'
+        : '0 -1px 6px rgba(0,0,0,0.018), 0 -3px 20px rgba(0,0,0,0.012)',
+    }}>
+      {/* liquid glass bg — same recipe as nav pills */}
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        backdropFilter: 'blur(12px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+        background: dark ? 'rgba(120,120,128,0.14)' : 'rgba(255,255,255,0.25)',
+      }} />
+      <div style={{
+        position: 'absolute', inset: 0, borderRadius: 27,
+        boxShadow: dark
+          ? 'inset 1.5px 1.5px 1px rgba(255,255,255,0.15)'
+          : 'inset 1.5px 1.5px 1px rgba(255,255,255,0.7), inset -1px -1px 1px rgba(255,255,255,0.4)',
+        border: dark ? '0.5px solid rgba(255,255,255,0.15)' : '0.5px solid rgba(0,0,0,0.06)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* autocorrect bar */}
+      <div style={{
+        display: 'flex', gap: 20, alignItems: 'center',
+        padding: '8px 22px 13px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {['"The"', 'the', 'to'].map((w, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <div style={{ width: 1, height: 25, background: '#ccc', opacity: 0.3 }} />}
+            <div style={{
+              flex: 1, textAlign: 'center',
+              fontFamily: '-apple-system, system-ui', fontSize: 17,
+              color: sugg, letterSpacing: -0.43, lineHeight: '22px',
+            }}>{w}</div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* key layout */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 13,
+        padding: '0 6.5px', width: '100%', boxSizing: 'border-box',
+        position: 'relative',
+      }}>
+        {row(['q','w','e','r','t','y','u','i','o','p'])}
+        {row(['a','s','d','f','g','h','j','k','l'], 20)}
+        <div style={{ display: 'flex', gap: 14.25, alignItems: 'center' }}>
+          {key(icons.shift, { w: 45, k: 'shift' })}
+          <div style={{ display: 'flex', gap: 6.5, flex: 1 }}>
+            {['z','x','c','v','b','n','m'].map(l => key(l, { flex: true, k: l }))}
+          </div>
+          {key(icons.del, { w: 45, k: 'del' })}
+        </div>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {key('ABC', { w: 92.25, fs: 18, k: 'abc' })}
+          {key('', { flex: true, k: 'space' })}
+          {key(icons.ret, { w: 92.25, ret: true, k: 'ret' })}
+        </div>
+      </div>
+
+      {/* bottom spacer (emoji+mic area, icons omitted) */}
+      <div style={{ height: 56, width: '100%', position: 'relative' }} />
+    </div>
+  );
+}
+
+Object.assign(window, {
+  IOSDevice, IOSStatusBar, IOSNavBar, IOSGlassPill, IOSList, IOSListRow, IOSKeyboard,
+});
+
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  body.light-bg { background: #e8eaf0; }
+  @media (max-width: 500px) {
+    body { background: #F2F2F7 !important; overflow: hidden; align-items: flex-start; justify-content: flex-start; }
+    #root { width: 100%; height: 100vh; height: 100dvh; position: fixed; inset: 0; }
+  }
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.85) translateY(30px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .screen-anim { animation: fadeIn 0.25s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+  .slide-up-anim { animation: slideUp 0.35s cubic-bezier(0.25,0.46,0.45,0.94) both; }
+  .pop-anim { animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+  /* Tweaks panel */
+  #tweaks-panel {
+    display: none;
+    position: fixed; bottom: 20px; right: 20px;
+    background: white; border-radius: 16px;
+    padding: 20px; width: 260px; z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    font-family: 'Inter', sans-serif;
+  }
+  #tweaks-panel.visible { display: block; animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
+  #tweaks-panel h3 { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: #1a1a1a; }
+  .tweak-row { margin-bottom: 12px; }
+  .tweak-row label { display: block; font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .tweak-row select, .tweak-row input[type=range] { width: 100%; }
+  .tweak-row select { padding: 6px 8px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; background: #f8f8f8; }
+  .tweak-toggle { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tweak-btn { padding: 5px 10px; border-radius: 20px; border: 1.5px solid #e0e0e0; font-size: 11px; font-weight: 600; cursor: pointer; background: white; transition: all 0.15s; }
+  .tweak-btn.active { background: #007AFF; border-color: #007AFF; color: white; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="tweaks-panel">
+  <h3>⚙ Tweaks</h3>
+  <div class="tweak-row">
+    <label>Active Screen</label>
+    <select id="tw-screen">
+      <option value="home">Home</option>
+      <option value="trips">Trips</option>
+      <option value="add">Add Trip</option>
+      <option value="import">Import Trips</option>
+      <option value="reports">Reports</option>
+      <option value="benefits">Benefits</option>
+      <option value="settings">Settings</option>
+    </select>
+  </div>
+  <div class="tweak-row">
+    <label>Theme</label>
+    <div class="tweak-toggle">
+      <button class="tweak-btn active" data-group="theme" data-val="light" onclick="applyTweak('theme','light',this)">Light</button>
+      <button class="tweak-btn" data-group="theme" data-val="dark" onclick="applyTweak('theme','dark',this)">Dark</button>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>Accent Color</label>
+    <div class="tweak-toggle">
+      <button class="tweak-btn active" data-group="accent" data-val="#007AFF" onclick="applyTweak('accent','#007AFF',this)" style="color:#007AFF">Blue</button>
+      <button class="tweak-btn" data-group="accent" data-val="#34C759" onclick="applyTweak('accent','#34C759',this)" style="color:#34C759">Green</button>
+      <button class="tweak-btn" data-group="accent" data-val="#FF6B35" onclick="applyTweak('accent','#FF6B35',this)" style="color:#FF6B35">Orange</button>
+    </div>
+  </div>
+  <div class="tweak-row">
+    <label>Page Background</label>
+    <div class="tweak-toggle">
+      <button class="tweak-btn active" data-group="bg" data-val="dark" onclick="applyTweak('bg','dark',this)">Dark</button>
+      <button class="tweak-btn" data-group="bg" data-val="light" onclick="applyTweak('bg','light',this)">Light</button>
+      <button class="tweak-btn" data-group="bg" data-val="gradient" onclick="applyTweak('bg','gradient',this)">Gradient</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Tweaks bridge
+let tweakState = { theme: 'light', accent: '#007AFF', bg: 'dark', screen: 'home' };
+function applyTweak(key, val, btn) {
+  if (btn) {
+    document.querySelectorAll(`[data-group="${key}"]`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+  tweakState[key] = val;
+  if (key === 'bg') {
+    document.body.style.background = val === 'light' ? '#e8eaf0' : val === 'gradient' ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' : '#1a1a2e';
+  }
+  window.dispatchEvent(new CustomEvent('tweakChange', { detail: tweakState }));
+}
+document.getElementById('tw-screen').addEventListener('change', e => {
+  tweakState.screen = e.target.value;
+  window.dispatchEvent(new CustomEvent('tweakChange', { detail: tweakState }));
+});
+window.addEventListener('message', e => {
+  if (e.data?.type === '__activate_edit_mode') document.getElementById('tweaks-panel').classList.add('visible');
+  if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaks-panel').classList.remove('visible');
+});
+window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+</script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ─── DATA ───────────────────────────────────────────────────────
+const IRS_RATES = { Business: 0.67, Medical: 0.21, Charity: 0.14, Moving: 0.21, Personal: 0 };
+const CAT_COLORS = {
+  Business:  { bg: '#007AFF', light: '#EBF4FF', text: '#007AFF' },
+  Medical:   { bg: '#FF3B30', light: '#FFEEED', text: '#FF3B30' },
+  Charity:   { bg: '#34C759', light: '#E8FBF0', text: '#34C759' },
+  Moving:    { bg: '#FF9500', light: '#FFF5E6', text: '#FF9500' },
+  Personal:  { bg: '#8E8E93', light: '#F2F2F7', text: '#8E8E93' },
+};
+
+const BUSINESS_INFO = {
+  'TEJ': { full: 'TEJ Pharmacy LLC', desc: 'Independent retail pharmacy', color: '#5856D6', light: '#EEEEFB' },
+  'DIA': { full: 'DIA Logistics Inc.', desc: 'Logistics & distribution', color: '#FF9500', light: '#FFF5E6' },
+  'B&B': { full: 'B&B Holdings', desc: 'Retail & wholesale operations', color: '#34C759', light: '#E8FBF0' },
+};
+const businessOf = (entity) => {
+  if (!entity) return null;
+  if (BUSINESS_INFO[entity]) return entity;
+  return null; // unmatched entities → "Other"
+};
+
+// ─── APP PREFS (persisted) ──────────────────────────────────────
+const DEFAULT_PREFS = {
+  defaultBusiness: '',          // '' | 'TEJ' | 'DIA' | 'B&B'
+  hiddenCategories: [],         // e.g. ['Moving','Personal']
+  notifications: true,
+  gpsAutoTrack: false,
+  irsAutoCheck: true,
+  aiSuggestions: true,
+};
+const loadPrefs = () => {
+  try { return { ...DEFAULT_PREFS, ...(JSON.parse(localStorage.getItem('mv_prefs') || '{}')) }; }
+  catch { return { ...DEFAULT_PREFS }; }
+};
+const savePrefs = (p) => localStorage.setItem('mv_prefs', JSON.stringify(p));
+const PrefsContext = React.createContext({ prefs: DEFAULT_PREFS, setPrefs: () => {} });
+
+// ─── AI SUGGESTION ENGINE ──────────────────────────────────────
+// Pattern-matches against existing trips + keywords to suggest category + business
+const aiSuggest = (trip, allTrips) => {
+  const text = `${trip.from || ''} ${trip.to || ''} ${trip.purpose || ''}`.toLowerCase();
+  const out = { category: null, business: null, confidence: 0, reasons: [] };
+
+  // Find similar past trips
+  const similar = allTrips.filter(t => {
+    if (t.id === trip.id) return false;
+    const tText = `${t.from} ${t.to} ${t.purpose}`.toLowerCase();
+    const fromMatch = trip.from && t.from.toLowerCase().includes(trip.from.toLowerCase().slice(0,8));
+    const toMatch = trip.to && t.to.toLowerCase().includes(trip.to.toLowerCase().slice(0,8));
+    return fromMatch || toMatch;
+  });
+  if (similar.length > 0) {
+    const cats = {};
+    const bizs = {};
+    similar.forEach(t => {
+      cats[t.category] = (cats[t.category] || 0) + 1;
+      if (t.entity) bizs[t.entity] = (bizs[t.entity] || 0) + 1;
+    });
+    const topCat = Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
+    const topBiz = Object.entries(bizs).sort((a,b)=>b[1]-a[1])[0];
+    if (topCat) {
+      out.category = topCat[0];
+      out.confidence = Math.min(95, 60 + topCat[1]*8);
+      out.reasons.push(`Matches ${similar.length} past trip${similar.length>1?'s':''} on similar route`);
+    }
+    if (topBiz) {
+      out.business = topBiz[0];
+      out.reasons.push(`Usually ${topBiz[0]} for this route`);
+    }
+  }
+
+  // Keyword fallback
+  if (!out.category) {
+    const KEYWORDS = {
+      Medical: ['hospital','clinic','doctor','medical','dentist','pharmacy visit','health','therapist','urgent care'],
+      Charity: ['volunteer','donation','food bank','charity','red cross','goodwill','non-profit','church'],
+      Moving:  ['moving','storage unit','u-haul','new apartment','new house'],
+      Personal:['grocery','target','walmart','costco','restaurant','vacation','personal','errand'],
+      Business:['client','meeting','office','warehouse','supplier','bank','tej','dia','b&b','conference','trade show','vendor'],
+    };
+    for (const [cat, words] of Object.entries(KEYWORDS)) {
+      const hit = words.find(w => text.includes(w));
+      if (hit) { out.category = cat; out.confidence = 72; out.reasons.push(`"${hit}" suggests ${cat}`); break; }
+    }
+  }
+
+  // Business detection from text
+  if (!out.business && trip.category === 'Business') {
+    for (const biz of Object.keys(BUSINESS_INFO)) {
+      if (text.includes(biz.toLowerCase())) {
+        out.business = biz;
+        out.reasons.push(`"${biz}" mentioned in route`);
+        break;
+      }
+    }
+  }
+  return out;
+};
+
+// ─── IRS COMPLIANCE CHECKER ────────────────────────────────────
+// IRS Pub 463 / §274(d): substantiation requires date, mileage, destination, business purpose
+const VAGUE_TERMS = ['errand','stuff','meeting','work','business','trip','drive','visit'];
+const irsCheck = (trip) => {
+  const issues = [];
+  const wins = [];
+  if (!trip.date) issues.push({ level:'error', msg:'Date is required (IRS §274(d))' });
+  else wins.push('Date logged');
+  if (!trip.from || !trip.to) issues.push({ level:'error', msg:'Both start and end locations required' });
+  else if (trip.from.length < 5 || trip.to.length < 5) issues.push({ level:'warn', msg:'Locations should be specific (street or business name)' });
+  else wins.push('Specific locations');
+  if (!trip.miles || parseFloat(trip.miles) <= 0) issues.push({ level:'error', msg:'Mileage must be greater than zero' });
+  else wins.push('Mileage recorded');
+
+  const purpose = (trip.purpose || '').trim();
+  if (!purpose) issues.push({ level:'error', msg:'Business purpose is required by IRS' });
+  else if (purpose.length < 10) issues.push({ level:'warn', msg:'Purpose is too brief — describe WHO and WHY (e.g. "Meeting with Dr. Smith re: Q2 inventory")' });
+  else if (VAGUE_TERMS.some(v => purpose.toLowerCase() === v || purpose.toLowerCase() === v+'s')) {
+    issues.push({ level:'warn', msg:`"${purpose}" is too vague. Add specifics — who you met, what was discussed.` });
+  } else wins.push('Detailed business purpose');
+
+  if (trip.category === 'Business' && !trip.entity) {
+    issues.push({ level:'warn', msg:'Business entity recommended for multi-business filers' });
+  } else if (trip.entity) wins.push('Entity assigned');
+
+  const score = Math.max(0, 100 - issues.filter(i=>i.level==='error').length*30 - issues.filter(i=>i.level==='warn').length*10);
+  return { issues, wins, score, compliant: issues.filter(i=>i.level==='error').length === 0 };
+};
+
+// ─── STATIC MAP RENDERER ───────────────────────────────────────
+// Generates a simple SVG map representation for a trip route
+function MapPreview({ trip, height = 140, accent = '#007AFF' }) {
+  // Deterministic pseudo-random path based on trip id/string
+  const seed = (trip.id || trip.from + trip.to).toString();
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0;
+  const rand = (n) => { h = (h * 9301 + 49297) % 233280; return Math.abs(h % n); };
+
+  const w = 360;
+  // Generate stylized streets
+  const streets = [];
+  for (let i = 0; i < 8; i++) {
+    const y = 15 + (i * (height-30)/8) + rand(8) - 4;
+    streets.push({ y, w: rand(200) + 100, x: rand(100) });
+  }
+  for (let i = 0; i < 10; i++) {
+    const x = 20 + (i * w/10) + rand(8) - 4;
+    streets.push({ x, h: rand(80) + 40, y: rand(40), v: true });
+  }
+
+  // Route waypoints
+  const startX = 30, startY = height - 30;
+  const endX = w - 30, endY = 30;
+  const midX1 = startX + (endX - startX) * 0.3 + rand(20) - 10;
+  const midY1 = startY + (endY - startY) * 0.3 + rand(20) - 10;
+  const midX2 = startX + (endX - startX) * 0.7 + rand(20) - 10;
+  const midY2 = startY + (endY - startY) * 0.7 + rand(20) - 10;
+  const path = `M ${startX} ${startY} Q ${midX1} ${midY1} ${midX2} ${midY2} T ${endX} ${endY}`;
+
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${w} ${height}`} style={{ display: 'block' }}>
+      <defs>
+        <pattern id={`grid-${seed.slice(0,6)}`} width="40" height="40" patternUnits="userSpaceOnUse">
+          <rect width="40" height="40" fill="#F2F4F7"/>
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E5E8ED" strokeWidth="0.5"/>
+        </pattern>
+      </defs>
+      <rect width={w} height={height} fill={`url(#grid-${seed.slice(0,6)})`}/>
+      {/* Streets */}
+      {streets.map((s,i) => s.v
+        ? <rect key={i} x={s.x} y={s.y} width="3" height={s.h} fill="#E0E5EC" rx="1"/>
+        : <rect key={i} x={s.x} y={s.y} width={s.w} height="3" fill="#E0E5EC" rx="1"/>
+      )}
+      {/* Park / water */}
+      <rect x={rand(80)+200} y={rand(40)+50} width="60" height="30" fill="#D5EFD5" rx="6" opacity="0.7"/>
+      <rect x={rand(60)+30} y={rand(30)+10} width="55" height="20" fill="#CFE4F5" rx="4" opacity="0.7"/>
+      {/* Route path glow */}
+      <path d={path} stroke={accent} strokeWidth="6" fill="none" strokeLinecap="round" opacity="0.18"/>
+      <path d={path} stroke={accent} strokeWidth="3" fill="none" strokeLinecap="round" strokeDasharray="0"/>
+      {/* Start marker */}
+      <circle cx={startX} cy={startY} r="8" fill="white" stroke="#34C759" strokeWidth="3"/>
+      <circle cx={startX} cy={startY} r="3" fill="#34C759"/>
+      {/* End pin */}
+      <path d={`M ${endX} ${endY-12} C ${endX-7} ${endY-12} ${endX-7} ${endY-2} ${endX} ${endY+4} C ${endX+7} ${endY-2} ${endX+7} ${endY-12} ${endX} ${endY-12} Z`} fill="#FF3B30"/>
+      <circle cx={endX} cy={endY-7} r="2.5" fill="white"/>
+      {/* Distance label */}
+      <g transform={`translate(${(startX+endX)/2 - 28} ${(startY+endY)/2 - 10})`}>
+        <rect width="56" height="20" rx="10" fill="white" stroke="#E5E5EA"/>
+        <text x="28" y="13" textAnchor="middle" fontSize="11" fontWeight="700" fill="#1a1a1a" fontFamily="Inter, sans-serif">
+          {trip.miles ? `${parseFloat(trip.miles).toFixed(1)} mi` : '— mi'}
+        </text>
+      </g>
+    </svg>
+  );
+}
+
+const SAMPLE_TRIPS = [
+  { id:1, date:'2026-04-18', from:'Home Office', to:'TEJ Pharmacy – Austin', miles:12.4, category:'Business', purpose:'Inventory check', entity:'TEJ' },
+  { id:2, date:'2026-04-17', from:'Home', to:'St. David\'s Medical Center', miles:8.1, category:'Medical', purpose:'Doctor appointment', entity:'' },
+  { id:3, date:'2026-04-16', from:'TEJ Pharmacy', to:'Red Cross Volunteer Center', miles:5.7, category:'Charity', purpose:'Volunteer work', entity:'' },
+  { id:4, date:'2026-04-15', from:'Warehouse', to:'New Apartment, Round Rock TX', miles:22.3, category:'Moving', purpose:'Moving boxes', entity:'' },
+  { id:5, date:'2026-04-14', from:'Home', to:'Grocery Store', miles:3.2, category:'Personal', purpose:'Personal errand', entity:'' },
+  { id:6, date:'2026-04-13', from:'DIA Logistics HQ', to:'Distribution Center', miles:18.9, category:'Business', purpose:'Operations review', entity:'DIA' },
+  { id:7, date:'2026-04-12', from:'Home', to:'Children\'s Hospital', miles:11.5, category:'Medical', purpose:'Follow-up visit', entity:'' },
+  { id:8, date:'2026-04-11', from:'B&B Storefront', to:'Wholesale Supplier', miles:24.3, category:'Business', purpose:'Supply pickup', entity:'B&B' },
+  { id:9, date:'2026-04-10', from:'Home', to:'Food Bank', miles:9.2, category:'Charity', purpose:'Food donation drop-off', entity:'' },
+  { id:10, date:'2026-04-09', from:'TEJ Pharmacy', to:'Client Site – South Austin', miles:33.6, category:'Business', purpose:'Pharmacy delivery run', entity:'TEJ' },
+  { id:11, date:'2026-04-08', from:'DIA Logistics HQ', to:'Port of Houston', miles:165.2, category:'Business', purpose:'Shipment coordination', entity:'DIA' },
+  { id:12, date:'2026-04-07', from:'B&B Storefront', to:'Trade Show Convention Center', miles:14.8, category:'Business', purpose:'Trade show booth setup', entity:'B&B' },
+  { id:13, date:'2026-04-06', from:'TEJ Pharmacy', to:'Compliance Office', miles:9.6, category:'Business', purpose:'Regulatory filing', entity:'TEJ' },
+  { id:14, date:'2026-04-05', from:'Home', to:'DIA Branch Office', miles:21.1, category:'Business', purpose:'Branch audit', entity:'DIA' },
+  { id:15, date:'2026-04-04', from:'B&B Storefront', to:'Bank of Austin', miles:6.4, category:'Business', purpose:'Deposit & banking', entity:'B&B' },
+];
+
+const PARTNERS = [
+  { name:'Hiscox', category:'Business Insurance', desc:'Small business insurance tailored for freelancers. Save up to 15%.', color:'#1B4F8A', badge:'Exclusive Deal', url:'' },
+  { name:'TurboTax', category:'Tax Filing', desc:'File your mileage deductions seamlessly. Import from MileVault.', color:'#00A651', badge:'Partner', url:'' },
+  { name:'QuickBooks', category:'Accounting', desc:'Sync your trips automatically with QuickBooks Self-Employed.', color:'#2CA01C', badge:'Featured', url:'' },
+  { name:'Ameritas', category:'Dental & Vision', desc:'Tyler Dental and Vision — comprehensive dental & vision coverage through Ameritas. Click to view your personalized plan.', color:'#00558C', badge:'Your Plan', url:'https://myplan.ameritas.com/id/010X6165' },
+  { name:'FreshBooks', category:'Invoicing', desc:'Create invoices with mileage built-in. 30-day free trial.', color:'#0075A2', badge:'Trial', url:'' },
+];
+
+// ─── ICONS ──────────────────────────────────────────────────────
+const Icon = ({ name, size=20, color='currentColor', strokeWidth=1.8 }) => {
+  const s = { width: size, height: size, display: 'block', flexShrink: 0 };
+  const props = { width: size, height: size, viewBox: `0 0 24 24`, fill: 'none', stroke: color, strokeWidth, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  const icons = {
+    home:      <svg {...props} style={s}><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+    list:      <svg {...props} style={s}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>,
+    plus:      <svg {...props} style={s}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>,
+    report:    <svg {...props} style={s}><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+    gift:      <svg {...props} style={s}><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>,
+    settings:  <svg {...props} style={s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
+    car:       <svg {...props} style={s}><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v7a2 2 0 01-2 2h-1"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>,
+    map:       <svg {...props} style={s}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>,
+    dollar:    <svg {...props} style={s}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
+    download:  <svg {...props} style={s}><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+    chevronR:  <svg {...props} style={s}><polyline points="9 18 15 12 9 6"/></svg>,
+    chevronL:  <svg {...props} style={s}><polyline points="15 18 9 12 15 6"/></svg>,
+    x:         <svg {...props} style={s}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+    check:     <svg {...props} style={s}><polyline points="20 6 9 17 4 12"/></svg>,
+    share:     <svg {...props} style={s}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+    user:      <svg {...props} style={s}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+    bell:      <svg {...props} style={s}><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>,
+    tag:       <svg {...props} style={s}><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>,
+    building:  <svg {...props} style={s}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M3 9h18"/></svg>,
+    arrowR:    <svg {...props} style={s}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+    trash:     <svg {...props} style={s}><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>,
+    star:      <svg {...props} style={s}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+    help:      <svg {...props} style={s}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+    lock:      <svg {...props} style={s}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+    edit:      <svg {...props} style={s}><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+    calendar:  <svg {...props} style={s}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+    alert:     <svg {...props} style={s}><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+  };
+  return icons[name] || <svg {...props} style={s}><circle cx="12" cy="12" r="10"/></svg>;
+};
+
+// ─── HELPERS ────────────────────────────────────────────────────
+const fmt$ = n => `$${n.toFixed(2)}`;
+const fmtMi = n => `${n.toFixed(1)} mi`;
+const fmtDate = d => {
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+const shortAddr = a => a.split(',')[0];
+const deduction = (miles, cat) => miles * (IRS_RATES[cat] || 0);
+
+// ─── TAB BAR ────────────────────────────────────────────────────
+function TabBar({ active, onTab, accent }) {
+  const tabs = [
+    { id:'home', icon:'home', label:'Home' },
+    { id:'trips', icon:'list', label:'Trips' },
+    { id:'add', icon:'plus', label:'', isAdd: true },
+    { id:'reports', icon:'report', label:'Reports' },
+    { id:'settings', icon:'settings', label:'More' },
+  ];
+  return (
+    <div style={{
+      position: 'absolute', bottom: 0, left: 0, right: 0,
+      height: 82, background: 'rgba(255,255,255,0.92)',
+      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+      borderTop: '0.5px solid rgba(0,0,0,0.1)',
+      display: 'flex', alignItems: 'flex-start', paddingTop: 10,
+      paddingBottom: 20, zIndex: 100,
+    }}>
+      {tabs.map(tab => (
+        <button key={tab.id} onClick={() => onTab(tab.id)}
+          style={{
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 3, background: 'none', border: 'none', cursor: 'pointer',
+            padding: 0, outline: 'none',
+          }}>
+          {tab.isAdd ? (
+            <div style={{
+              width: 48, height: 48, borderRadius: 14, background: accent,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 4px 16px ${accent}55`, marginTop: -8,
+            }}>
+              <Icon name="plus" size={24} color="white" strokeWidth={2.5}/>
+            </div>
+          ) : (
+            <>
+              <Icon name={tab.icon} size={22}
+                color={active === tab.id ? accent : '#8E8E93'} strokeWidth={active === tab.id ? 2.2 : 1.8}/>
+              <span style={{ fontSize: 10, fontWeight: active === tab.id ? 600 : 400,
+                color: active === tab.id ? accent : '#8E8E93', letterSpacing: 0.1 }}>
+                {tab.label}
+              </span>
+            </>
+          )}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── CATEGORY PILL ──────────────────────────────────────────────
+function CatPill({ cat, small }) {
+  const c = CAT_COLORS[cat] || CAT_COLORS.Personal;
+  return (
+    <span style={{
+      background: c.light, color: c.text,
+      padding: small ? '2px 8px' : '3px 10px',
+      borderRadius: 20, fontSize: small ? 10 : 11, fontWeight: 600,
+      letterSpacing: 0.2, whiteSpace: 'nowrap',
+    }}>{cat}</span>
+  );
+}
+
+// ─── TRIP ROW ───────────────────────────────────────────────────
+function TripRow({ trip, accent, onPress }) {
+  const ded = deduction(trip.miles, trip.category);
+  const c = CAT_COLORS[trip.category];
+  return (
+    <button onClick={onPress} style={{
+      display: 'flex', alignItems: 'center', padding: '12px 16px',
+      background: 'white', border: 'none', width: '100%', cursor: 'pointer',
+      borderBottom: '0.5px solid #F0F0F5', textAlign: 'left', outline: 'none',
+      transition: 'background 0.12s',
+    }}
+    onMouseDown={e=>e.currentTarget.style.background='#F5F5F7'}
+    onMouseUp={e=>e.currentTarget.style.background='white'}
+    onTouchStart={e=>e.currentTarget.style.background='#F5F5F7'}
+    onTouchEnd={e=>e.currentTarget.style.background='white'}>
+      <div style={{
+        width: 38, height: 38, borderRadius: 10, background: c.light,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginRight: 12, flexShrink: 0,
+      }}>
+        <Icon name="car" size={18} color={c.text}/>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+            {shortAddr(trip.from)} → {shortAddr(trip.to)}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CatPill cat={trip.category} small/>
+          <span style={{ fontSize: 11, color: '#8E8E93' }}>{fmtDate(trip.date)}</span>
+          {trip.entity && <span style={{ fontSize: 11, color: '#8E8E93' }}>· {trip.entity}</span>}
+        </div>
+      </div>
+      <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{fmtMi(trip.miles)}</div>
+        {ded > 0 && <div style={{ fontSize: 11, color: '#34C759', fontWeight: 600 }}>{fmt$(ded)}</div>}
+      </div>
+    </button>
+  );
+}
+
+// ─── HOME SCREEN ────────────────────────────────────────────────
+function HomeScreen({ trips, accent, onAddTrip, onTripPress }) {
+  const totalMiles = trips.reduce((s,t)=>s+t.miles,0);
+  const totalDed = trips.reduce((s,t)=>s+deduction(t.miles,t.category),0);
+  const byCategory = {};
+  trips.forEach(t=>{
+    byCategory[t.category] = (byCategory[t.category]||0) + t.miles;
+  });
+
+  return (
+    <div style={{ background: '#F2F2F7', minHeight: '100%', paddingBottom: 100 }} className="screen-anim">
+      {/* Header card */}
+      <div style={{
+        background: `linear-gradient(150deg, ${accent} 0%, ${accent}CC 100%)`,
+        padding: '16px 20px 24px', position: 'relative', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120,
+          borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }}/>
+        <div style={{ position: 'absolute', top: 20, right: 40, width: 60, height: 60,
+          borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }}/>
+        <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 12, fontWeight: 500, marginBottom: 4 }}>
+          April 2026 · YTD
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, marginBottom: 16 }}>
+          <span style={{ color: 'white', fontSize: 42, fontWeight: 800, lineHeight: 1 }}>
+            {totalMiles.toFixed(0)}
+          </span>
+          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, fontWeight: 500, paddingBottom: 6 }}>miles</span>
+        </div>
+        <div style={{ display: 'flex', gap: 20 }}>
+          <div>
+            <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11, marginBottom: 2 }}>Est. Deduction</div>
+            <div style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>{fmt$(totalDed)}</div>
+          </div>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.2)' }}/>
+          <div>
+            <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11, marginBottom: 2 }}>Trips Logged</div>
+            <div style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>{trips.length}</div>
+          </div>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.2)' }}/>
+          <div>
+            <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 11, marginBottom: 2 }}>Tax Year</div>
+            <div style={{ color: 'white', fontSize: 20, fontWeight: 700 }}>2026</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Category breakdown */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+          By Category
+        </div>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+          {Object.entries(byCategory).map(([cat, miles]) => {
+            const c = CAT_COLORS[cat];
+            const ded = deduction(miles, cat);
+            return (
+              <div key={cat} style={{
+                background: 'white', borderRadius: 14, padding: '12px 14px',
+                minWidth: 110, flexShrink: 0,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+              }}>
+                <div style={{ width: 28, height: 28, borderRadius: 8, background: c.light,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                  <Icon name="car" size={14} color={c.text}/>
+                </div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#1a1a1a' }}>{miles.toFixed(1)}</div>
+                <div style={{ fontSize: 10, color: '#8E8E93', marginTop: 1 }}>mi · {cat}</div>
+                {ded > 0 && <div style={{ fontSize: 11, color: c.text, fontWeight: 600, marginTop: 4 }}>{fmt$(ded)}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Quick action */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <button onClick={onAddTrip} style={{
+          width: '100%', background: 'white', border: `1.5px dashed ${accent}55`,
+          borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center',
+          gap: 12, cursor: 'pointer', outline: 'none',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: `${accent}15`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="plus" size={18} color={accent}/>
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Log a Trip</div>
+            <div style={{ fontSize: 12, color: '#8E8E93' }}>Add mileage manually or use GPS</div>
+          </div>
+          <div style={{ marginLeft: 'auto' }}>
+            <Icon name="chevronR" size={16} color="#C7C7CC"/>
+          </div>
+        </button>
+      </div>
+
+      {/* Recent trips */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Recent Trips
+          </div>
+        </div>
+        <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          {trips.slice(0,4).map(trip => (
+            <TripRow key={trip.id} trip={trip} accent={accent} onPress={() => onTripPress(trip)}/>
+          ))}
+        </div>
+      </div>
+
+      {/* IRS rate banner */}
+      <div style={{ margin: '16px 16px 0' }}>
+        <div style={{ background: 'white', borderRadius: 14, padding: '12px 14px',
+          display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FFF5E6',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Icon name="dollar" size={16} color="#FF9500"/>
+          </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a' }}>2026 IRS Mileage Rates</div>
+            <div style={{ fontSize: 11, color: '#8E8E93', marginTop: 2 }}>
+              Business $0.67 · Medical $0.21 · Charity $0.14
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TRIPS SCREEN ───────────────────────────────────────────────
+function TripsScreen({ trips, accent, onTripPress, onAddTrip, onImport }) {
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('All');
+  const cats = ['All','Business','Medical','Charity','Moving','Personal'];
+  const filtered = trips.filter(t => {
+    const matchCat = filter === 'All' || t.category === filter;
+    const matchSearch = !search || t.from.toLowerCase().includes(search.toLowerCase()) ||
+      t.to.toLowerCase().includes(search.toLowerCase()) ||
+      t.purpose.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  return (
+    <div style={{ background: '#F2F2F7', minHeight: '100%', paddingBottom: 100 }} className="screen-anim">
+      <div style={{ padding: '12px 16px 0' }}>
+        {/* Header row with Import button */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 0.5 }}>All Trips</div>
+          <button onClick={onImport} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px',
+            background: `${accent}15`, border: 'none', borderRadius: 20,
+            color: accent, fontSize: 12, fontWeight: 700, cursor: 'pointer', outline: 'none',
+          }}>
+            <Icon name="download" size={14} color={accent}/> Import
+          </button>
+        </div>
+        {/* Search */}
+        <div style={{
+          background: 'rgba(142,142,147,0.12)', borderRadius: 12,
+          display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 12,
+        }}>
+          <Icon name="map" size={16} color="#8E8E93"/>
+          <input value={search} onChange={e=>setSearch(e.target.value)}
+            placeholder="Search trips..."
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none',
+              fontSize: 15, color: '#1a1a1a', fontFamily: 'Inter, sans-serif' }}/>
+          {search && <button onClick={()=>setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            <Icon name="x" size={14} color="#8E8E93"/>
+          </button>}
+        </div>
+        {/* Filter pills */}
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 12 }}>
+          {cats.map(cat => (
+            <button key={cat} onClick={() => setFilter(cat)} style={{
+              padding: '5px 14px', borderRadius: 20, border: 'none',
+              background: filter === cat ? accent : 'rgba(142,142,147,0.12)',
+              color: filter === cat ? 'white' : '#3a3a3c',
+              fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+              outline: 'none', transition: 'all 0.15s',
+            }}>{cat}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{ padding: '0 16px' }}>
+        <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#8E8E93' }}>
+              <Icon name="car" size={32} color="#C7C7CC"/>
+              <div style={{ marginTop: 8, fontSize: 14 }}>No trips found</div>
+            </div>
+          ) : filtered.map(trip => (
+            <TripRow key={trip.id} trip={trip} accent={accent} onPress={() => onTripPress(trip)}/>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 12, color: '#8E8E93', marginTop: 12 }}>
+          {filtered.length} trip{filtered.length !== 1 ? 's' : ''} · {fmtMi(filtered.reduce((s,t)=>s+t.miles,0))} total
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── ADD TRIP SCREEN ────────────────────────────────────────────
+function AddTripScreen({ accent, onSave, onClose, allTrips = [] }) {
+  const { prefs } = React.useContext(PrefsContext);
+  const [step, setStep] = useState(1); // 1=route, 2=details, 3=confirm
+  const [form, setForm] = useState({
+    from: '', to: '', miles: '', category: 'Business',
+    purpose: '', date: new Date().toISOString().split('T')[0],
+    entity: prefs.defaultBusiness || '',
+    photo: null, // { name, dataUrl, type }
+  });
+  const [saved, setSaved] = useState(false);
+  const [aiDismissed, setAiDismissed] = useState(false);
+  const fileRef = useRef(null);
+
+  const set = (k,v) => setForm(f => ({...f,[k]:v}));
+  const ded = parseFloat(form.miles) ? deduction(parseFloat(form.miles), form.category) : 0;
+
+  // Live AI suggestion (when user has filled some text but not committed category yet)
+  const suggestion = (prefs.aiSuggestions && (form.from || form.to || form.purpose))
+    ? aiSuggest(form, allTrips) : null;
+  const showAI = suggestion && !aiDismissed && (
+    (suggestion.category && suggestion.category !== form.category) ||
+    (suggestion.business && suggestion.business !== form.entity)
+  );
+
+  const irs = irsCheck(form);
+
+  const handlePhoto = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => set('photo', { name: file.name, dataUrl: reader.result, type: file.type });
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = () => {
+    setSaved(true);
+    setTimeout(() => { onSave(form); onClose(); }, 1000);
+  };
+
+  if (saved) return (
+    <div style={{ background: '#F2F2F7', minHeight: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16 }} className="screen-anim">
+      <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#34C75920',
+        display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pop-anim">
+        <Icon name="check" size={36} color="#34C759" strokeWidth={3}/>
+      </div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a' }}>Trip Saved!</div>
+      <div style={{ fontSize: 13, color: '#8E8E93' }}>
+        {form.miles} miles · {fmt$(ded)} deduction
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ background: '#F2F2F7', minHeight: '100%', paddingBottom: 100 }} className="screen-anim">
+      {/* Progress bar */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[1,2,3].map(s => (
+            <div key={s} style={{ flex: 1, height: 3, borderRadius: 2,
+              background: s <= step ? accent : '#E5E5EA', transition: 'background 0.3s' }}/>
+          ))}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+          {['Route','Details','Review'].map((l,i) => (
+            <span key={l} style={{ fontSize: 10, color: i+1 <= step ? accent : '#8E8E93', fontWeight: i+1 === step ? 700 : 400 }}>{l}</span>
+          ))}
+        </div>
+      </div>
+
+      {step === 1 && (
+        <div style={{ padding: '20px 16px 0' }} className="screen-anim">
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Where did you go?</div>
+          <div style={{ fontSize: 13, color: '#8E8E93', marginBottom: 20 }}>Enter your start and end locations</div>
+
+          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px', borderBottom: '0.5px solid #F0F0F5' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#34C75920',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 12 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#34C759' }}/>
+              </div>
+              <input value={form.from} onChange={e=>set('from',e.target.value)}
+                placeholder="Start location"
+                style={{ flex: 1, padding: '14px 0', border: 'none', outline: 'none',
+                  fontSize: 15, fontFamily: 'Inter, sans-serif', color: '#1a1a1a', background: 'none' }}/>
+            </div>
+            {/* Dashed connector */}
+            <div style={{ height: 24, display: 'flex', alignItems: 'center', paddingLeft: 29 }}>
+              <div style={{ width: 2, flex: 1, background: 'repeating-linear-gradient(to bottom, #C7C7CC 0, #C7C7CC 4px, transparent 4px, transparent 8px)', maxWidth: 2, height: 20 }}/>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#FF3B3020',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 12 }}>
+                <Icon name="map" size={14} color="#FF3B30"/>
+              </div>
+              <input value={form.to} onChange={e=>set('to',e.target.value)}
+                placeholder="End location"
+                style={{ flex: 1, padding: '14px 0', border: 'none', outline: 'none',
+                  fontSize: 15, fontFamily: 'Inter, sans-serif', color: '#1a1a1a', background: 'none' }}/>
+            </div>
+          </div>
+
+          {/* Miles input */}
+          <div style={{ background: 'white', borderRadius: 16, padding: '14px 16px',
+            boxShadow: '0 1px 8px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#8E8E93', fontWeight: 500, marginBottom: 8 }}>MILES DRIVEN</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Icon name="car" size={18} color={accent}/>
+              <input value={form.miles} onChange={e=>set('miles',e.target.value)}
+                type="number" placeholder="0.0"
+                style={{ flex: 1, border: 'none', outline: 'none', fontSize: 22, fontWeight: 700,
+                  color: '#1a1a1a', fontFamily: 'Inter, sans-serif', background: 'none' }}/>
+              <span style={{ fontSize: 16, color: '#8E8E93', fontWeight: 500 }}>mi</span>
+            </div>
+            {ded > 0 && (
+              <div style={{ marginTop: 8, fontSize: 12, color: '#34C759', fontWeight: 600 }}>
+                ≈ {fmt$(ded)} deductible
+              </div>
+            )}
+          </div>
+
+          <button onClick={() => setStep(2)} disabled={!form.from || !form.to || !form.miles}
+            style={{
+              width: '100%', padding: '16px', borderRadius: 14, border: 'none',
+              background: (!form.from || !form.to || !form.miles) ? '#C7C7CC' : accent,
+              color: 'white', fontSize: 16, fontWeight: 700, cursor: !form.from || !form.to || !form.miles ? 'not-allowed' : 'pointer',
+              outline: 'none', transition: 'all 0.15s',
+            }}>Continue</button>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div style={{ padding: '20px 16px 0' }} className="screen-anim">
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Trip Details</div>
+          <div style={{ fontSize: 13, color: '#8E8E93', marginBottom: 20 }}>Categorize and describe your trip</div>
+
+          {/* Category */}
+          <div style={{ background: 'white', borderRadius: 16, padding: '14px 16px',
+            boxShadow: '0 1px 8px rgba(0,0,0,0.06)', marginBottom: 12 }}>
+            <div style={{ fontSize: 12, color: '#8E8E93', fontWeight: 500, marginBottom: 10 }}>CATEGORY</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {Object.keys(IRS_RATES).map(cat => {
+                const c = CAT_COLORS[cat];
+                const rate = IRS_RATES[cat];
+                const sel = form.category === cat;
+                return (
+                  <button key={cat} onClick={() => set('category', cat)} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
+                    borderRadius: 10, border: `1.5px solid ${sel ? c.bg : '#F0F0F5'}`,
+                    background: sel ? c.light : 'white', cursor: 'pointer', outline: 'none',
+                    transition: 'all 0.15s',
+                  }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: c.light,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="tag" size={13} color={c.text}/>
+                    </div>
+                    <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: '#1a1a1a', textAlign: 'left' }}>{cat}</span>
+                    <span style={{ fontSize: 12, color: '#8E8E93' }}>
+                      {rate > 0 ? `$${rate}/mi` : 'No deduction'}
+                    </span>
+                    {sel && <Icon name="check" size={16} color={c.bg} strokeWidth={2.5}/>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Purpose + Date + Entity */}
+          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden',
+            boxShadow: '0 1px 8px rgba(0,0,0,0.06)', marginBottom: 12 }}>
+            <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F0F0F5' }}>
+              <div style={{ fontSize: 11, color: '#8E8E93', fontWeight: 500, marginBottom: 4 }}>PURPOSE <span style={{color:'#FF3B30'}}>*</span></div>
+              <input value={form.purpose} onChange={e=>set('purpose',e.target.value)}
+                placeholder="e.g. Q2 inventory review with Dr. Patel"
+                style={{ width: '100%', border: 'none', outline: 'none', fontSize: 15,
+                  fontFamily: 'Inter, sans-serif', color: '#1a1a1a', background: 'none' }}/>
+              <div style={{ fontSize: 10, color: '#8E8E93', marginTop: 4 }}>IRS requires WHO + WHY (min 10 chars)</div>
+            </div>
+            <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F0F0F5',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 11, color: '#8E8E93', fontWeight: 500 }}>DATE</div>
+              <input value={form.date} onChange={e=>set('date',e.target.value)}
+                type="date"
+                style={{ border: 'none', outline: 'none', fontSize: 15, fontWeight: 500,
+                  fontFamily: 'Inter, sans-serif', color: accent, background: 'none' }}/>
+            </div>
+            {form.category === 'Business' && (
+              <div style={{ padding: '12px 16px' }}>
+                <div style={{ fontSize: 11, color: '#8E8E93', fontWeight: 500, marginBottom: 8 }}>BUSINESS ENTITY</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {Object.entries(BUSINESS_INFO).map(([key, info]) => {
+                    const sel = form.entity === key;
+                    return (
+                      <button key={key} onClick={() => set('entity', sel ? '' : key)} style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '7px 12px', borderRadius: 20,
+                        border: `1.5px solid ${sel ? info.color : '#E5E5EA'}`,
+                        background: sel ? info.light : 'white',
+                        color: sel ? info.color : '#3a3a3c',
+                        fontSize: 12, fontWeight: 700, cursor: 'pointer', outline: 'none',
+                        fontFamily: 'inherit',
+                      }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: info.color }}/>
+                        {key}
+                        {sel && <Icon name="check" size={12} color={info.color} strokeWidth={3}/>}
+                      </button>
+                    );
+                  })}
+                  <button onClick={() => {
+                    const v = window.prompt('Other business name:');
+                    if (v) set('entity', v);
+                  }} style={{
+                    padding: '7px 12px', borderRadius: 20, border: '1.5px dashed #C7C7CC',
+                    background: 'white', color: '#8E8E93', fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer', outline: 'none', fontFamily: 'inherit',
+                  }}>+ Other</button>
+                </div>
+                {form.entity && !BUSINESS_INFO[form.entity] && (
+                  <div style={{ marginTop: 8, fontSize: 12, color: '#3a3a3c' }}>
+                    Custom: <b>{form.entity}</b>
+                    <button onClick={()=>set('entity','')} style={{marginLeft:8,background:'none',border:'none',color:'#FF3B30',cursor:'pointer',fontSize:12}}>clear</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* AI Suggestion Banner */}
+          {showAI && (
+            <div style={{ background: 'linear-gradient(135deg, #5856D610 0%, #007AFF10 100%)',
+              border: '1.5px solid #5856D640', borderRadius: 14, padding: '12px 14px',
+              marginBottom: 12 }} className="pop-anim">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <div style={{ width: 22, height: 22, borderRadius: 6, background: '#5856D6',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: 'white', fontSize: 11, fontWeight: 800 }}>AI</span>
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#5856D6' }}>Smart Suggestion</span>
+                <span style={{ fontSize: 10, color: '#8E8E93', marginLeft: 'auto' }}>{suggestion.confidence}% match</span>
+              </div>
+              <div style={{ fontSize: 13, color: '#1a1a1a', marginBottom: 8 }}>
+                {suggestion.category && suggestion.category !== form.category && <>Try category <b>{suggestion.category}</b>. </>}
+                {suggestion.business && suggestion.business !== form.entity && <>Likely <b>{suggestion.business}</b>. </>}
+              </div>
+              {suggestion.reasons.map((r,i) => (
+                <div key={i} style={{ fontSize: 11, color: '#5856D6', marginBottom: 2 }}>· {r}</div>
+              ))}
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button onClick={() => {
+                  if (suggestion.category) set('category', suggestion.category);
+                  if (suggestion.business) set('entity', suggestion.business);
+                  setAiDismissed(true);
+                }} style={{
+                  flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: '#5856D6',
+                  color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', outline: 'none',
+                }}>Apply</button>
+                <button onClick={() => setAiDismissed(true)} style={{
+                  padding: '8px 14px', borderRadius: 8, border: '1px solid #C7C7CC',
+                  background: 'white', color: '#3a3a3c', fontSize: 12, fontWeight: 600,
+                  cursor: 'pointer', outline: 'none',
+                }}>Dismiss</button>
+              </div>
+            </div>
+          )}
+
+          {/* Photo / Receipt Attachment */}
+          <div style={{ background: 'white', borderRadius: 16, padding: '12px 16px',
+            boxShadow: '0 1px 8px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: '#8E8E93', fontWeight: 500, marginBottom: 8 }}>RECEIPT / PHOTO</div>
+            {form.photo ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {form.photo.type?.startsWith('image/') ? (
+                  <img src={form.photo.dataUrl} style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 8 }}/>
+                ) : (
+                  <div style={{ width: 50, height: 50, borderRadius: 8, background: '#F2F2F7',
+                    display:'flex',alignItems:'center',justifyContent:'center' }}>
+                    <Icon name="report" size={22} color="#8E8E93"/>
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a',
+                    overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{form.photo.name}</div>
+                  <div style={{ fontSize: 11, color: '#34C759' }}>✓ Attached</div>
+                </div>
+                <button onClick={()=>set('photo', null)} style={{ background:'none',border:'none',cursor:'pointer',padding:6 }}>
+                  <Icon name="trash" size={16} color="#FF3B30"/>
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input ref={fileRef} type="file" accept="image/*,.pdf" onChange={handlePhoto}
+                  style={{ display: 'none' }}/>
+                <button onClick={() => fileRef.current?.click()} style={{
+                  flex: 1, padding: '12px', borderRadius: 10, border: '1.5px dashed #C7C7CC',
+                  background: 'white', cursor: 'pointer', outline: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  color: accent, fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
+                }}>
+                  <Icon name="plus" size={14} color={accent}/> Camera / Photo
+                </button>
+                <button onClick={() => fileRef.current?.click()} style={{
+                  flex: 1, padding: '12px', borderRadius: 10, border: '1.5px dashed #C7C7CC',
+                  background: 'white', cursor: 'pointer', outline: 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  color: accent, fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
+                }}>
+                  <Icon name="report" size={14} color={accent}/> Receipt
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setStep(1)} style={{
+              flex: 1, padding: '16px', borderRadius: 14, border: '1.5px solid #E5E5EA',
+              background: 'white', color: '#1a1a1a', fontSize: 15, fontWeight: 600,
+              cursor: 'pointer', outline: 'none',
+            }}>Back</button>
+            <button onClick={() => setStep(3)} style={{
+              flex: 2, padding: '16px', borderRadius: 14, border: 'none',
+              background: accent, color: 'white', fontSize: 15, fontWeight: 700,
+              cursor: 'pointer', outline: 'none',
+            }}>Review Trip</button>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div style={{ padding: '20px 16px 0' }} className="screen-anim">
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Review & Save</div>
+          <div style={{ fontSize: 13, color: '#8E8E93', marginBottom: 16 }}>Confirm your trip details</div>
+
+          {/* IRS Compliance Check */}
+          {prefs.irsAutoCheck && form.category !== 'Personal' && (() => {
+            const errs = irs.issues.filter(i => i.level === 'error');
+            const warns = irs.issues.filter(i => i.level === 'warn');
+            const passed = irs.compliant && warns.length === 0;
+            const hasErrors = errs.length > 0;
+            return (
+              <div style={{
+                background: passed ? '#E8F8EE' : hasErrors ? '#FFF0EE' : '#FFF8E6',
+                border: `1.5px solid ${passed ? '#34C75940' : hasErrors ? '#FF3B3040' : '#FF950040'}`,
+                borderRadius: 14, padding: '12px 14px', marginBottom: 14,
+              }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: errs.length || warns.length ? 8 : 0 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <Icon name={passed ? 'check' : 'alert'} size={16}
+                      color={passed ? '#34C759' : hasErrors ? '#FF3B30' : '#FF9500'} strokeWidth={2.5}/>
+                    <span style={{ fontSize: 13, fontWeight: 700,
+                      color: passed ? '#0A8043' : hasErrors ? '#C5281C' : '#A35F00' }}>
+                      {passed ? 'IRS-Ready ✓' : hasErrors ? 'IRS Issues — Fix Required' : 'IRS Warnings'}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700,
+                    color: passed ? '#0A8043' : hasErrors ? '#C5281C' : '#A35F00' }}>
+                    Score: {irs.score}/100
+                  </span>
+                </div>
+                {errs.map((e,i) => (
+                  <div key={'e'+i} style={{ fontSize: 12, color: '#C5281C', marginBottom: 2 }}>· {e.msg}</div>
+                ))}
+                {warns.map((w,i) => (
+                  <div key={'w'+i} style={{ fontSize: 12, color: '#A35F00', marginBottom: 2 }}>· {w.msg}</div>
+                ))}
+                {passed && irs.wins.length > 0 && (
+                  <div style={{ fontSize: 11, color: '#0A8043', marginTop: 4 }}>
+                    {irs.wins.join(' · ')}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden',
+            boxShadow: '0 1px 8px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+            {/* Route visual */}
+            <div style={{ padding: '16px', background: `linear-gradient(135deg, ${accent}10 0%, ${accent}05 100%)` }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 4 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#34C759' }}/>
+                  <div style={{ width: 1.5, height: 24, background: '#E5E5EA', margin: '4px 0' }}/>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF3B30' }}/>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginBottom: 20 }}>{form.from}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{form.to}</div>
+                </div>
+              </div>
+            </div>
+            {[
+              ['Miles', `${form.miles} mi`],
+              ['Category', form.category],
+              ['Est. Deduction', ded > 0 ? fmt$(ded) : 'None'],
+              ['Purpose', form.purpose || '—'],
+              ['Date', form.date],
+              form.entity ? ['Entity', form.entity] : null,
+            ].filter(Boolean).map(([k,v]) => (
+              <div key={k} style={{ padding: '11px 16px', borderTop: '0.5px solid #F0F0F5',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 14, color: '#8E8E93' }}>{k}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: k === 'Est. Deduction' && ded > 0 ? '#34C759' : '#1a1a1a' }}>{v}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setStep(2)} style={{
+              flex: 1, padding: '16px', borderRadius: 14, border: '1.5px solid #E5E5EA',
+              background: 'white', color: '#1a1a1a', fontSize: 15, fontWeight: 600,
+              cursor: 'pointer', outline: 'none',
+            }}>Edit</button>
+            <button onClick={handleSave}
+              disabled={prefs.irsAutoCheck && !irs.compliant && form.category !== 'Personal'}
+              style={{
+                flex: 2, padding: '16px', borderRadius: 14, border: 'none',
+                background: (prefs.irsAutoCheck && !irs.compliant && form.category !== 'Personal') ? '#C7C7CC' : '#34C759',
+                color: 'white', fontSize: 15, fontWeight: 700,
+                cursor: (prefs.irsAutoCheck && !irs.compliant && form.category !== 'Personal') ? 'not-allowed' : 'pointer',
+                outline: 'none',
+                boxShadow: (prefs.irsAutoCheck && !irs.compliant && form.category !== 'Personal') ? 'none' : '0 4px 14px rgba(52,199,89,0.4)',
+              }}>Save Trip ✓</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── TRIP DETAIL MODAL ──────────────────────────────────────────
+function TripDetail({ trip, accent, onClose, onDelete }) {
+  const ded = deduction(trip.miles, trip.category);
+  const c = CAT_COLORS[trip.category];
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, background: 'white', zIndex: 200, overflowY: 'auto',
+    }} className="slide-up-anim">
+      {/* Header */}
+      <div style={{ background: `linear-gradient(160deg, ${c.bg} 0%, ${c.bg}BB 100%)`,
+        padding: '56px 20px 24px', position: 'relative' }}>
+        <button onClick={onClose} style={{
+          position: 'absolute', top: 16, right: 16, width: 32, height: 32, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.25)', border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none',
+        }}>
+          <Icon name="x" size={16} color="white" strokeWidth={2.5}/>
+        </button>
+        <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginBottom: 4 }}>{fmtDate(trip.date)}</div>
+        <div style={{ color: 'white', fontSize: 28, fontWeight: 800, lineHeight: 1.1, marginBottom: 4 }}>
+          {fmtMi(trip.miles)}
+        </div>
+        {ded > 0 && <div style={{ color: 'rgba(255,255,255,0.85)', fontSize: 16, fontWeight: 600 }}>
+          {fmt$(ded)} deductible
+        </div>}
+        <CatPill cat={trip.category}/>
+      </div>
+
+      <div style={{ padding: '20px 16px' }}>
+        {/* Route */}
+        <div style={{ background: '#F2F2F7', borderRadius: 14, padding: 16, marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 2 }}>
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#34C759' }}/>
+              <div style={{ width: 2, height: 28, background: '#E5E5EA', margin: '4px 0' }}/>
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#FF3B30' }}/>
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', marginBottom: 24 }}>{trip.from}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>{trip.to}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Details */}
+        {[
+          ['Purpose', trip.purpose],
+          ['IRS Rate', `$${IRS_RATES[trip.category]}/mile`],
+          trip.entity ? ['Entity/Client', trip.entity] : null,
+          ['Tax Year', '2026'],
+        ].filter(Boolean).map(([k,v]) => (
+          <div key={k} style={{ display: 'flex', justifyContent: 'space-between',
+            padding: '12px 0', borderBottom: '0.5px solid #F0F0F5' }}>
+            <span style={{ fontSize: 14, color: '#8E8E93' }}>{k}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>{v}</span>
+          </div>
+        ))}
+
+        <button onClick={() => onDelete(trip.id)} style={{
+          width: '100%', marginTop: 24, padding: '14px', borderRadius: 12,
+          background: '#FFF0EE', border: 'none', color: '#FF3B30',
+          fontSize: 15, fontWeight: 600, cursor: 'pointer', outline: 'none',
+        }}>Delete Trip</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── REPORTS SCREEN ─────────────────────────────────────────────
+function ReportsScreen({ trips, accent, onTripPress }) {
+  const [year, setYear] = useState('2026');
+  const [tab, setTab] = useState('summary');
+  // drill: null | {category} | {category, business}
+  const [drill, setDrill] = useState(null);
+  const years = ['2026','2025','2024','2023'];
+
+  const yearTrips = trips; // All sample trips are current year
+  const totalMiles = yearTrips.reduce((s,t)=>s+t.miles,0);
+  const totalDed = yearTrips.reduce((s,t)=>s+deduction(t.miles,t.category),0);
+
+  const byCat = {};
+  yearTrips.forEach(t => {
+    if (!byCat[t.category]) byCat[t.category] = { miles: 0, ded: 0, count: 0 };
+    byCat[t.category].miles += t.miles;
+    byCat[t.category].ded += deduction(t.miles, t.category);
+    byCat[t.category].count++;
+  });
+
+  // Business breakdown — only for Business category
+  const businessTrips = yearTrips.filter(t => t.category === 'Business');
+  const byBiz = {};
+  businessTrips.forEach(t => {
+    const key = businessOf(t.entity) || 'Other';
+    if (!byBiz[key]) byBiz[key] = { miles: 0, ded: 0, count: 0, trips: [] };
+    byBiz[key].miles += t.miles;
+    byBiz[key].ded += deduction(t.miles, t.category);
+    byBiz[key].count++;
+    byBiz[key].trips.push(t);
+  });
+  const businessTotalMiles = businessTrips.reduce((s,t)=>s+t.miles,0);
+
+  // Drill-down detail data
+  let drillTrips = [];
+  let drillTitle = '', drillSubtitle = '', drillColor = accent, drillLight = '#F2F2F7';
+  if (drill) {
+    if (drill.business) {
+      const info = BUSINESS_INFO[drill.business];
+      drillTrips = (byBiz[drill.business]?.trips) || [];
+      drillTitle = info ? info.full : drill.business;
+      drillSubtitle = info ? info.desc : 'Business trips';
+      drillColor = info ? info.color : accent;
+      drillLight = info ? info.light : '#F2F2F7';
+    } else if (drill.category) {
+      drillTrips = yearTrips.filter(t => t.category === drill.category);
+      drillTitle = drill.category;
+      drillSubtitle = `${drillTrips.length} trip${drillTrips.length !== 1 ? 's' : ''} this year`;
+      drillColor = CAT_COLORS[drill.category]?.bg || accent;
+      drillLight = CAT_COLORS[drill.category]?.light || '#F2F2F7';
+    }
+  }
+
+  return (
+    <div style={{ background: '#F2F2F7', minHeight: '100%', paddingBottom: 100 }} className="screen-anim">
+      {/* Year selector */}
+      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderBottom: '0.5px solid #F0F0F5' }}>
+        <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>Mileage Report</span>
+        <select value={year} onChange={e=>setYear(e.target.value)} style={{
+          background: `${accent}15`, border: 'none', borderRadius: 8, padding: '6px 10px',
+          fontSize: 14, fontWeight: 700, color: accent, fontFamily: 'Inter, sans-serif', outline: 'none',
+        }}>
+          {years.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+      </div>
+
+      {/* Summary cards */}
+      <div style={{ padding: '16px 16px 0', display: 'flex', gap: 10 }}>
+        <div style={{ flex: 1, background: 'white', borderRadius: 14, padding: '14px 14px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)', textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1a1a' }}>{totalMiles.toFixed(0)}</div>
+          <div style={{ fontSize: 11, color: '#8E8E93', marginTop: 2 }}>Total Miles</div>
+        </div>
+        <div style={{ flex: 1, background: 'white', borderRadius: 14, padding: '14px 14px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)', textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#34C759' }}>{fmt$(totalDed)}</div>
+          <div style={{ fontSize: 11, color: '#8E8E93', marginTop: 2 }}>Est. Deduction</div>
+        </div>
+        <div style={{ flex: 1, background: 'white', borderRadius: 14, padding: '14px 14px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)', textAlign: 'center' }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#1a1a1a' }}>{yearTrips.length}</div>
+          <div style={{ fontSize: 11, color: '#8E8E93', marginTop: 2 }}>Trips</div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <div style={{ display: 'flex', gap: 4, background: 'rgba(142,142,147,0.12)', borderRadius: 10, padding: 3 }}>
+          {['summary','itemized'].map(t => (
+            <button key={t} onClick={()=>{setTab(t); setDrill(null);}} style={{
+              flex: 1, padding: '7px', borderRadius: 8, border: 'none',
+              background: tab === t ? 'white' : 'none',
+              color: tab === t ? '#1a1a1a' : '#8E8E93',
+              fontSize: 13, fontWeight: tab === t ? 700 : 500, cursor: 'pointer',
+              outline: 'none', boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
+              textTransform: 'capitalize', transition: 'all 0.15s',
+            }}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+          ))}
+        </div>
+      </div>
+
+      {tab === 'summary' && !drill && (
+        <div style={{ padding: '12px 16px 0' }} className="screen-anim">
+          {Object.entries(byCat).map(([cat, data]) => {
+            const c = CAT_COLORS[cat];
+            const pct = (data.miles / totalMiles * 100);
+            const isBusiness = cat === 'Business';
+            return (
+              <button key={cat} onClick={() => setDrill({ category: cat })} style={{
+                width: '100%', textAlign: 'left', cursor: 'pointer', outline: 'none',
+                background: 'white', borderRadius: 14, padding: '14px 16px',
+                marginBottom: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                border: 'none', fontFamily: 'inherit',
+                transition: 'transform 0.12s',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <CatPill cat={cat}/>
+                    <span style={{ fontSize: 12, color: '#8E8E93' }}>{data.count} trip{data.count !== 1 ? 's' : ''}</span>
+                    {isBusiness && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: c.text,
+                        background: c.light, padding: '2px 7px', borderRadius: 10 }}>
+                        {Object.keys(byBiz).length} entities
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{data.miles.toFixed(1)} mi</div>
+                      {data.ded > 0 && <div style={{ fontSize: 11, color: '#34C759', fontWeight: 600 }}>{fmt$(data.ded)}</div>}
+                    </div>
+                    <Icon name="chevronR" size={14} color="#C7C7CC"/>
+                  </div>
+                </div>
+                <div style={{ height: 5, background: '#F2F2F7', borderRadius: 3 }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: c.bg, borderRadius: 3, transition: 'width 0.6s ease' }}/>
+                </div>
+                <div style={{ fontSize: 11, color: '#8E8E93', marginTop: 4 }}>
+                  {pct.toFixed(0)}% of total miles{isBusiness ? ' · Tap to drill into businesses' : ''}
+                </div>
+              </button>
+            );
+          })}
+
+          {/* IRS Rates table */}
+          <div style={{ background: 'white', borderRadius: 14, overflow: 'hidden',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)', marginBottom: 12 }}>
+            <div style={{ padding: '12px 16px', borderBottom: '0.5px solid #F0F0F5',
+              fontSize: 11, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              2026 IRS Rates
+            </div>
+            {Object.entries(IRS_RATES).map(([cat, rate]) => (
+              <div key={cat} style={{ padding: '10px 16px', borderBottom: '0.5px solid #F0F0F5',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <CatPill cat={cat} small/>
+                <span style={{ fontSize: 13, fontWeight: 600, color: rate > 0 ? '#34C759' : '#8E8E93' }}>
+                  {rate > 0 ? `$${rate}/mile` : 'No deduction'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* DRILL-DOWN: Business category → list of businesses */}
+      {tab === 'summary' && drill && drill.category === 'Business' && !drill.business && (
+        <div style={{ padding: '12px 16px 0' }} className="screen-anim">
+          {/* Breadcrumb */}
+          <button onClick={() => setDrill(null)} style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+            padding: '4px 0 12px', cursor: 'pointer', outline: 'none', color: accent,
+            fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
+          }}>
+            <Icon name="chevronL" size={14} color={accent}/> Back to Categories
+          </button>
+
+          <div style={{ background: `linear-gradient(135deg, ${CAT_COLORS.Business.bg} 0%, ${CAT_COLORS.Business.bg}CC 100%)`,
+            borderRadius: 16, padding: '14px 16px', marginBottom: 12, color: 'white' }}>
+            <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 2 }}>BUSINESS · {year}</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{businessTotalMiles.toFixed(1)} mi</div>
+            <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>
+              {fmt$(businessTrips.reduce((s,t)=>s+deduction(t.miles,t.category),0))} deduction · {businessTrips.length} trips · {Object.keys(byBiz).length} entities
+            </div>
+          </div>
+
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase',
+            letterSpacing: 0.5, padding: '0 4px 8px' }}>By Entity</div>
+
+          {Object.entries(byBiz).sort((a,b) => b[1].miles - a[1].miles).map(([biz, data]) => {
+            const info = BUSINESS_INFO[biz] || { full: biz, desc: 'Other business', color: '#8E8E93', light: '#F2F2F7' };
+            const pct = (data.miles / businessTotalMiles * 100);
+            return (
+              <button key={biz} onClick={() => setDrill({ category: 'Business', business: biz })} style={{
+                width: '100%', textAlign: 'left', cursor: 'pointer', outline: 'none',
+                background: 'white', borderRadius: 14, padding: '14px 16px',
+                marginBottom: 10, boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                border: 'none', fontFamily: 'inherit',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: info.light,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: info.color, letterSpacing: 0.3 }}>{biz}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{info.full}</div>
+                    <div style={{ fontSize: 11, color: '#8E8E93' }}>{info.desc} · {data.count} trip{data.count !== 1 ? 's' : ''}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{data.miles.toFixed(1)} mi</div>
+                    <div style={{ fontSize: 11, color: '#34C759', fontWeight: 600 }}>{fmt$(data.ded)}</div>
+                  </div>
+                  <Icon name="chevronR" size={14} color="#C7C7CC"/>
+                </div>
+                <div style={{ height: 5, background: '#F2F2F7', borderRadius: 3 }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: info.color, borderRadius: 3, transition: 'width 0.6s ease' }}/>
+                </div>
+                <div style={{ fontSize: 11, color: '#8E8E93', marginTop: 4 }}>{pct.toFixed(0)}% of business miles</div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* DRILL-DOWN: Specific business → trip-level detail */}
+      {tab === 'summary' && drill && drill.business && (
+        <div style={{ padding: '12px 16px 0' }} className="screen-anim">
+          <button onClick={() => setDrill({ category: 'Business' })} style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+            padding: '4px 0 12px', cursor: 'pointer', outline: 'none', color: drillColor,
+            fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
+          }}>
+            <Icon name="chevronL" size={14} color={drillColor}/> Back to Businesses
+          </button>
+
+          <div style={{ background: `linear-gradient(135deg, ${drillColor} 0%, ${drillColor}CC 100%)`,
+            borderRadius: 16, padding: '16px', marginBottom: 12, color: 'white' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: 'white' }}>{drill.business}</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>{drillTitle}</div>
+                <div style={{ fontSize: 11, opacity: 0.8 }}>{drillSubtitle}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 16, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+              <div>
+                <div style={{ fontSize: 10, opacity: 0.7 }}>MILES</div>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>{drillTrips.reduce((s,t)=>s+t.miles,0).toFixed(1)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, opacity: 0.7 }}>DEDUCTION</div>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>{fmt$(drillTrips.reduce((s,t)=>s+deduction(t.miles,t.category),0))}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, opacity: 0.7 }}>TRIPS</div>
+                <div style={{ fontSize: 20, fontWeight: 800 }}>{drillTrips.length}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Top destinations */}
+          {(() => {
+            const destMap = {};
+            drillTrips.forEach(t => {
+              const d = shortAddr(t.to);
+              destMap[d] = (destMap[d] || 0) + t.miles;
+            });
+            const topDests = Object.entries(destMap).sort((a,b) => b[1] - a[1]).slice(0,3);
+            const topMax = topDests[0]?.[1] || 1;
+            return (
+              <div style={{ background: 'white', borderRadius: 14, padding: '12px 16px',
+                marginBottom: 12, boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase',
+                  letterSpacing: 0.5, marginBottom: 10 }}>Top Destinations</div>
+                {topDests.map(([dest, mi]) => (
+                  <div key={dest} style={{ marginBottom: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: '#1a1a1a',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{dest}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: drillColor }}>{mi.toFixed(1)} mi</span>
+                    </div>
+                    <div style={{ height: 4, background: '#F2F2F7', borderRadius: 2 }}>
+                      <div style={{ height: '100%', width: `${(mi/topMax*100)}%`, background: drillColor, borderRadius: 2 }}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#8E8E93', textTransform: 'uppercase',
+            letterSpacing: 0.5, padding: '0 4px 8px' }}>All Trips</div>
+          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            {drillTrips.map(trip => (
+              <TripRow key={trip.id} trip={trip} accent={drillColor} onPress={() => onTripPress && onTripPress(trip)}/>
+            ))}
+          </div>
+
+          <button style={{
+            width: '100%', marginTop: 14, padding: '13px', borderRadius: 12, border: 'none',
+            background: drillColor, color: 'white', fontSize: 14, fontWeight: 700,
+            cursor: 'pointer', outline: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+            <Icon name="download" size={16} color="white"/>
+            Export {drill.business} Report
+          </button>
+        </div>
+      )}
+
+      {/* DRILL-DOWN: Non-business category → trip detail */}
+      {tab === 'summary' && drill && drill.category && drill.category !== 'Business' && (
+        <div style={{ padding: '12px 16px 0' }} className="screen-anim">
+          <button onClick={() => setDrill(null)} style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+            padding: '4px 0 12px', cursor: 'pointer', outline: 'none', color: drillColor,
+            fontSize: 14, fontWeight: 600, fontFamily: 'inherit',
+          }}>
+            <Icon name="chevronL" size={14} color={drillColor}/> Back to Categories
+          </button>
+          <div style={{ background: `linear-gradient(135deg, ${drillColor} 0%, ${drillColor}CC 100%)`,
+            borderRadius: 16, padding: '14px 16px', marginBottom: 12, color: 'white' }}>
+            <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 2 }}>{drill.category.toUpperCase()} · {year}</div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{drillTrips.reduce((s,t)=>s+t.miles,0).toFixed(1)} mi</div>
+            <div style={{ fontSize: 12, opacity: 0.85, marginTop: 2 }}>
+              {fmt$(drillTrips.reduce((s,t)=>s+deduction(t.miles,t.category),0))} deduction · {drillTrips.length} trips
+            </div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            {drillTrips.map(trip => (
+              <TripRow key={trip.id} trip={trip} accent={drillColor} onPress={() => onTripPress && onTripPress(trip)}/>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab === 'itemized' && (
+        <div style={{ padding: '12px 16px 0' }} className="screen-anim">
+          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            {yearTrips.map(trip => (
+              <div key={trip.id} style={{ padding: '11px 14px', borderBottom: '0.5px solid #F0F0F5' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#1a1a1a',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {shortAddr(trip.from)} → {shortAddr(trip.to)}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 3, alignItems: 'center' }}>
+                      <CatPill cat={trip.category} small/>
+                      <span style={{ fontSize: 10, color: '#8E8E93' }}>{fmtDate(trip.date)}</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{fmtMi(trip.miles)}</div>
+                    {deduction(trip.miles, trip.category) > 0 &&
+                      <div style={{ fontSize: 10, color: '#34C759', fontWeight: 600 }}>
+                        {fmt$(deduction(trip.miles, trip.category))}
+                      </div>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Export actions */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+          Export
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {[['CSV / Excel', '#34C759'], ['PDF Report', accent], ['IRS Format', '#FF9500']].map(([label, color]) => (
+            <button key={label} style={{
+              flex: 1, padding: '12px 8px', borderRadius: 12, border: 'none',
+              background: 'white', cursor: 'pointer', outline: 'none',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            }}>
+              <Icon name="download" size={18} color={color}/>
+              <div style={{ fontSize: 10, fontWeight: 600, color: '#3a3a3c', marginTop: 5 }}>{label}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── BENEFITS SCREEN ────────────────────────────────────────────
+function BenefitsScreen({ accent }) {
+  const [expanded, setExpanded] = useState(null);
+  return (
+    <div style={{ background: '#F2F2F7', minHeight: '100%', paddingBottom: 100 }} className="screen-anim">
+      {/* Hero */}
+      <div style={{ background: `linear-gradient(150deg, ${accent} 0%, #5856D6 100%)`,
+        padding: '20px 20px 28px' }}>
+        <div style={{ color: 'white', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
+          Exclusive Benefits
+        </div>
+        <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, lineHeight: 1.5 }}>
+          Special offers for MileVault Pro members — partners vetted for freelancers & self-employed.
+        </div>
+      </div>
+
+      {/* Referral banner */}
+      <div style={{ margin: '16px 16px 0' }}>
+        <div style={{ background: 'white', borderRadius: 16, padding: '14px 16px',
+          display: 'flex', gap: 12, alignItems: 'center', boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: '#FFD60015',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Icon name="gift" size={20} color="#FFD600"/>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>Refer & Earn</div>
+            <div style={{ fontSize: 11, color: '#8E8E93' }}>Your code: <b style={{ color: accent }}>VAULT-X9K2</b> · 3 referrals</div>
+          </div>
+          <button style={{ padding: '7px 12px', background: `${accent}15`, borderRadius: 8, border: 'none',
+            color: accent, fontSize: 12, fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
+            Share
+          </button>
+        </div>
+      </div>
+
+      {/* Partners */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+          Partner Offers
+        </div>
+        {PARTNERS.map((p, i) => (
+          <div key={p.name} style={{ background: 'white', borderRadius: 16, marginBottom: 10,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+            <button onClick={() => setExpanded(expanded === i ? null : i)} style={{
+              display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
+              width: '100%', background: 'none', border: 'none', cursor: 'pointer', outline: 'none',
+            }}>
+              <div style={{ width: 46, height: 46, borderRadius: 12, background: p.color,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ color: 'white', fontSize: 15, fontWeight: 800 }}>{p.name[0]}</span>
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{p.name}</span>
+                  <span style={{ padding: '1px 7px', background: `${accent}15`, borderRadius: 10,
+                    fontSize: 9, fontWeight: 700, color: accent, textTransform: 'uppercase' }}>{p.badge}</span>
+                </div>
+                <div style={{ fontSize: 12, color: '#8E8E93' }}>{p.category}</div>
+              </div>
+              <Icon name={expanded === i ? 'chevronL' : 'chevronR'} size={16} color="#C7C7CC"/>
+            </button>
+            {expanded === i && (
+              <div style={{ padding: '0 16px 14px', borderTop: '0.5px solid #F0F0F5' }} className="screen-anim">
+                <p style={{ fontSize: 13, color: '#3a3a3c', lineHeight: 1.55, margin: '12px 0' }}>{p.desc}</p>
+                <button style={{ padding: '11px 20px', background: p.color, border: 'none',
+                  borderRadius: 10, color: 'white', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  outline: 'none', width: '100%',
+                }} onClick={() => p.url && window.open(p.url, '_blank')}>Get Offer →</button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── SETTINGS SCREEN ────────────────────────────────────────────
+function SettingsScreen({ accent, dark, onToggleDark, plan='free', trialEndsAt, proUntil, bonusMonths=0,
+  tripsThisMonth=0, freeLimit=5, archiveCount=0, onShowArchive, onShowPaywall, onShowReferral }) {
+  const [notifs, setNotifs] = useState(true);
+  const [gps, setGps] = useState(false);
+
+  const planLabel = plan === 'pro' ? 'Pro' : plan === 'trial' ? 'Free Trial' : 'Free';
+  const planColor = plan === 'pro' ? '#34C759' : plan === 'trial' ? '#FF9500' : '#8E8E93';
+  const trialDaysLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt - Date.now())/(24*60*60*1000))) : 0;
+  const Toggle = ({ on, onToggle }) => (
+    <div onClick={onToggle} style={{
+      width: 44, height: 26, borderRadius: 13, background: on ? '#34C759' : '#E5E5EA',
+      position: 'relative', cursor: 'pointer', transition: 'background 0.2s',
+    }}>
+      <div style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 20, height: 20,
+        borderRadius: '50%', background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+        transition: 'left 0.2s' }}/>
+    </div>
+  );
+
+  const Row = ({ label, detail, icon, iconBg, action }) => (
+    <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px',
+      borderBottom: '0.5px solid #F0F0F5', gap: 12 }}>
+      <div style={{ width: 32, height: 32, borderRadius: 8, background: iconBg || '#F2F2F7',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <Icon name={icon} size={16} color={iconBg ? 'white' : '#8E8E93'}/>
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 14, fontWeight: 500, color: '#1a1a1a' }}>{label}</div>
+        {detail && <div style={{ fontSize: 12, color: '#8E8E93', marginTop: 1 }}>{detail}</div>}
+      </div>
+      {action || <Icon name="chevronR" size={14} color="#C7C7CC"/>}
+    </div>
+  );
+
+  return (
+    <div style={{ background: '#F2F2F7', minHeight: '100%', paddingBottom: 100 }} className="screen-anim">
+      {/* Profile */}
+      <div style={{ background: 'white', margin: '12px 16px', borderRadius: 16,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%',
+            background: `linear-gradient(135deg, ${accent}, #5856D6)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: 'white', fontSize: 20, fontWeight: 800 }}>JD</span>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a' }}>Jane Doe</div>
+            <div style={{ fontSize: 13, color: '#8E8E93' }}>jane@daltonpharmacy.biz</div>
+          </div>
+          <button style={{ padding: '7px 14px', background: `${accent}15`, borderRadius: 8, border: 'none',
+            color: accent, fontSize: 12, fontWeight: 700, cursor: 'pointer', outline: 'none' }}>Edit</button>
+        </div>
+        <div style={{ display: 'flex', borderTop: '0.5px solid #F0F0F5' }}>
+          {[
+            [planLabel, 'star', planColor, onShowPaywall],
+            ['Referrals', 'share', '#34C759', onShowReferral],
+            ['HSA Linked', 'lock', '#FF9500', null],
+          ].map(([l, icon, color, action]) => (
+            <div key={l} onClick={action || undefined} style={{
+              flex: 1, padding: '12px 8px', textAlign: 'center',
+              borderRight: '0.5px solid #F0F0F5',
+              cursor: action ? 'pointer' : 'default' }}>
+              <Icon name={icon} size={18} color={color}/>
+              <div style={{ fontSize: 10, fontWeight: 600, color: '#3a3a3c', marginTop: 4 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Plan / Subscription Card */}
+      <div style={{ margin: '0 16px 12px', borderRadius: 16, overflow:'hidden',
+        background: plan === 'pro' ? `linear-gradient(135deg, ${accent} 0%, #5856D6 100%)`
+          : plan === 'trial' ? 'linear-gradient(135deg, #FF9500 0%, #FF3B30 100%)'
+          : 'white',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+        color: plan === 'free' ? '#1a1a1a' : 'white' }}>
+        <div style={{ padding:'14px 16px' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ fontSize:11, fontWeight:800, padding:'3px 8px', borderRadius:6,
+                background: plan === 'free' ? '#F2F2F7' : 'rgba(255,255,255,0.25)',
+                color: plan === 'free' ? planColor : 'white', letterSpacing:0.5 }}>
+                {planLabel.toUpperCase()}
+              </span>
+              {plan === 'trial' && (
+                <span style={{ fontSize:11, opacity:0.9 }}>{trialDaysLeft} days left</span>
+              )}
+            </div>
+            <div style={{ fontSize:11, opacity:0.85 }}>
+              {plan === 'free' ? `${tripsThisMonth}/${freeLimit} trips this month` : 'Unlimited'}
+            </div>
+          </div>
+          {plan === 'free' ? (
+            <>
+              <div style={{ fontSize:15, fontWeight:700, marginBottom:4 }}>Upgrade to MileVault Pro</div>
+              <div style={{ fontSize:12, color:'#8E8E93', marginBottom:12, lineHeight:1.4 }}>
+                $9.99/mo · 30 days free · Unlimited trips · Audit-ready reports
+              </div>
+              <button onClick={onShowPaywall} style={{
+                width:'100%', padding:'11px', borderRadius:10, border:'none',
+                background: accent, color:'white', fontSize:13, fontWeight:700,
+                cursor:'pointer', outline:'none', fontFamily:'inherit' }}>
+                Start 30-day Free Trial
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize:15, fontWeight:700, marginBottom:2 }}>
+                $9.99/month {bonusMonths > 0 && <span style={{ fontSize:11, opacity:0.85 }}>+ {bonusMonths} bonus mo.</span>}
+              </div>
+              <div style={{ fontSize:11, opacity:0.9, marginBottom:10 }}>
+                {plan === 'trial' ? 'Renews after trial' : 'Renews monthly'}
+              </div>
+              <button onClick={onShowReferral} style={{
+                width:'100%', padding:'10px', borderRadius:10, border:'none',
+                background:'rgba(255,255,255,0.2)', color:'white', fontSize:12, fontWeight:700,
+                cursor:'pointer', outline:'none', fontFamily:'inherit',
+                display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                🎁 Refer friends → free months
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Preferences */}
+      <div style={{ margin: '0 16px 12px', background: 'white', borderRadius: 16,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        <div style={{ padding: '10px 16px', fontSize: 11, color: '#8E8E93', fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: 0.5 }}>Preferences</div>
+        <Row label="Notifications" icon="bell" iconBg={accent}
+          action={<Toggle on={notifs} onToggle={()=>setNotifs(!notifs)}/>}/>
+        <Row label="GPS Auto-Track" detail="Record routes automatically" icon="map" iconBg="#34C759"
+          action={<Toggle on={gps} onToggle={()=>setGps(!gps)}/>}/>
+        <Row label="Dark Mode" icon="settings" iconBg="#3a3a3c"
+          action={<Toggle on={dark} onToggle={onToggleDark}/>}/>
+      </div>
+
+      {/* Account */}
+      <div style={{ margin: '0 16px 12px', background: 'white', borderRadius: 16,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        <div style={{ padding: '10px 16px', fontSize: 11, color: '#8E8E93', fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: 0.5 }}>Account</div>
+        <Row label="Business Type" detail="Freelancer / Self-employed" icon="building" iconBg="#007AFF"/>
+        <Row label="HSA Account" detail="Not linked" icon="lock" iconBg="#FF9500"/>
+        <Row label="Entities & Jobs" detail="2 entities, 3 jobs" icon="tag" iconBg="#5856D6"/>
+        <Row label="Help & Support" icon="help" iconBg="#8E8E93"/>
+        <Row label="Privacy Policy" icon="lock" iconBg="#3a3a3c"/>
+      </div>
+
+      <div style={{ margin: '0 16px', background: 'white', borderRadius: 16,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+        <button style={{ padding: '14px 16px', width: '100%', background: 'none', border: 'none',
+          color: '#FF3B30', fontSize: 15, fontWeight: 600, cursor: 'pointer', outline: 'none' }}>
+          Sign Out
+        </button>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: '#C7C7CC' }}>
+        MileVault Pro v2.4.1 · Tax Year 2026 · IRS-Compliant
+      </div>
+    </div>
+  );
+}
+
+// ─── IMPORT SCREEN ──────────────────────────────────────────────
+function ImportScreen({ accent, onSave, onClose }) {
+  const [phase, setPhase] = useState('upload'); // upload | parsing | review | done
+  const [fileInfo, setFileInfo] = useState(null);
+  const [rawText, setRawText] = useState('');
+  const [parsed, setParsed] = useState([]);
+  const [current, setCurrent] = useState(0);
+  const [approved, setApproved] = useState([]);
+  const [skipped, setSkipped] = useState(0);
+  const [editMode, setEditMode] = useState(false);
+  const [editBuf, setEditBuf] = useState(null);
+  const [parseError, setParseError] = useState('');
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef();
+
+  const SOURCE_TYPES = [
+    { id:'pdf', label:'PDF', icon:'report', color:'#FF3B30' },
+    { id:'image', label:'Screenshot / Photo', icon:'map', color:'#007AFF' },
+    { id:'excel', label:'Excel / CSV', icon:'dollar', color:'#34C759' },
+    { id:'notes', label:'Notes / Text', icon:'edit', color:'#FF9500' },
+  ];
+
+  const readFile = (file) => {
+    setFileInfo({ name: file.name, size: (file.size/1024).toFixed(1)+'KB', type: file.type });
+    const reader = new FileReader();
+    reader.onload = e => setRawText(e.target.result || '[binary file — AI will interpret]');
+    if (file.type.startsWith('image/')) {
+      reader.readAsDataURL(file);
+    } else {
+      reader.readAsText(file);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault(); setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) readFile(file);
+  };
+
+  const parseWithAI = async () => {
+    setPhase('parsing'); setParseError('');
+    const prompt = `You are parsing mileage/trip records for a mileage tracking app called MileVault. 
+Extract ALL trips from the following data. For each trip return a JSON array of objects with these exact fields:
+- date (YYYY-MM-DD format, use 2026 if year unclear)
+- from (start address or location name)
+- to (end address or location name)  
+- miles (number, decimal ok)
+- category (one of: Business, Medical, Charity, Moving, Personal)
+- purpose (short description)
+- entity (client/business name, or empty string)
+
+Rules:
+- If miles not given but addresses are, estimate based on context clues or put 0
+- Infer category from purpose if not stated
+- Return ONLY valid JSON array, no other text, no markdown fences
+
+Data to parse:
+${rawText.slice(0, 3000)}`;
+
+    try {
+      const result = await window.claude.complete(prompt);
+      // Extract JSON from response
+      const match = result.match(/\[[\s\S]*\]/);
+      if (!match) throw new Error('No JSON array found');
+      const trips = JSON.parse(match[0]);
+      if (!Array.isArray(trips) || trips.length === 0) throw new Error('No trips found');
+      // Sanitize
+      const clean = trips.map((t, i) => ({
+        id: Date.now() + i,
+        date: t.date || new Date().toISOString().split('T')[0],
+        from: t.from || '',
+        to: t.to || '',
+        miles: parseFloat(t.miles) || 0,
+        category: ['Business','Medical','Charity','Moving','Personal'].includes(t.category) ? t.category : 'Business',
+        purpose: t.purpose || '',
+        entity: t.entity || '',
+      }));
+      setParsed(clean);
+      setCurrent(0);
+      setApproved([]);
+      setPhase('review');
+    } catch(err) {
+      setParseError('Could not extract trips: ' + err.message + '. Try pasting the text manually below.');
+      setPhase('upload');
+    }
+  };
+
+  const trip = parsed[current];
+  const ded = trip ? trip.miles * (IRS_RATES[trip.category] || 0) : 0;
+
+  const approve = () => {
+    setApproved(a => [...a, editMode ? editBuf : trip]);
+    setEditMode(false);
+    if (current + 1 >= parsed.length) { setPhase('done'); } else { setCurrent(c => c+1); }
+  };
+  const skip = () => {
+    setSkipped(s => s+1);
+    setEditMode(false);
+    if (current + 1 >= parsed.length) { setPhase('done'); } else { setCurrent(c => c+1); }
+  };
+  const startEdit = () => { setEditBuf({...trip}); setEditMode(true); };
+  const setEB = (k,v) => setEditBuf(b => ({...b,[k]:v}));
+
+  const finish = () => { approved.forEach(t => onSave(t)); onClose(); };
+
+  return (
+    <div style={{ background: '#F2F2F7', minHeight: '100%', paddingBottom: 100 }} className="screen-anim">
+
+      {/* ── UPLOAD PHASE ── */}
+      {phase === 'upload' && (
+        <div style={{ padding: '16px' }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#1a1a1a', marginBottom: 4 }}>Import Trips</div>
+          <div style={{ fontSize: 13, color: '#8E8E93', marginBottom: 20, lineHeight: 1.5 }}>
+            Upload any file — AI extracts trips automatically. Then review each one before adding to your vault.
+          </div>
+
+          {/* Drop zone */}
+          <div
+            onDragOver={e=>{e.preventDefault();setDragging(true)}}
+            onDragLeave={()=>setDragging(false)}
+            onDrop={handleDrop}
+            onClick={()=>fileRef.current.click()}
+            style={{
+              border: `2px dashed ${dragging ? accent : '#C7C7CC'}`,
+              borderRadius: 18, padding: '28px 20px', textAlign: 'center',
+              background: dragging ? `${accent}08` : 'white',
+              cursor: 'pointer', transition: 'all 0.2s', marginBottom: 14,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            }}>
+            <input ref={fileRef} type="file" style={{display:'none'}}
+              accept=".pdf,.csv,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.heic,.webp"
+              onChange={e => { if(e.target.files[0]) readFile(e.target.files[0]); }}/>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: `${accent}15`,
+              display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
+              <Icon name="download" size={24} color={accent}/>
+            </div>
+            {fileInfo ? (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>{fileInfo.name}</div>
+                <div style={{ fontSize: 12, color: '#8E8E93', marginTop: 4 }}>{fileInfo.size} · Ready to parse</div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>Drop file here or tap to browse</div>
+                <div style={{ fontSize: 12, color: '#8E8E93', marginTop: 6 }}>PDF · Excel · CSV · Screenshot · Notes</div>
+              </>
+            )}
+          </div>
+
+          {/* Source type chips */}
+          <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+            {SOURCE_TYPES.map(s => (
+              <div key={s.id} style={{ display:'flex', alignItems:'center', gap:6,
+                padding:'6px 12px', borderRadius:20, background:'white',
+                boxShadow:'0 1px 3px rgba(0,0,0,0.07)', fontSize:12, fontWeight:600, color:'#3a3a3c' }}>
+                <Icon name={s.icon} size={13} color={s.color}/>
+                {s.label}
+              </div>
+            ))}
+          </div>
+
+          {/* Or paste text */}
+          <div style={{ background:'white', borderRadius:14, overflow:'hidden',
+            boxShadow:'0 1px 4px rgba(0,0,0,0.06)', marginBottom:14 }}>
+            <div style={{ padding:'10px 14px 0', fontSize:11, fontWeight:700,
+              color:'#8E8E93', textTransform:'uppercase', letterSpacing:0.5 }}>Or paste text / notes</div>
+            <textarea value={rawText} onChange={e=>setRawText(e.target.value)}
+              placeholder="Paste trip notes, spreadsheet data, emails, or any text with mileage info..."
+              style={{ width:'100%', padding:'10px 14px 14px', border:'none', outline:'none',
+                fontSize:13, fontFamily:'Inter,sans-serif', color:'#1a1a1a', background:'none',
+                resize:'none', minHeight:90, lineHeight:1.5 }}/>
+          </div>
+
+          {parseError && (
+            <div style={{ background:'#FFF0EE', borderRadius:10, padding:'10px 14px',
+              fontSize:12, color:'#FF3B30', marginBottom:14 }}>{parseError}</div>
+          )}
+
+          <button onClick={parseWithAI} disabled={!rawText && !fileInfo}
+            style={{
+              width:'100%', padding:'16px', borderRadius:14, border:'none',
+              background: (!rawText && !fileInfo) ? '#C7C7CC' : accent,
+              color:'white', fontSize:16, fontWeight:700, cursor: (!rawText && !fileInfo) ? 'not-allowed' : 'pointer',
+              outline:'none', boxShadow: (!rawText && !fileInfo) ? 'none' : `0 4px 16px ${accent}44`,
+            }}>Extract Trips with AI →</button>
+        </div>
+      )}
+
+      {/* ── PARSING PHASE ── */}
+      {phase === 'parsing' && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+          minHeight:'60vh', padding:32, textAlign:'center' }} className="screen-anim">
+          <div style={{ width:64, height:64, borderRadius:18, background:`${accent}15`,
+            display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20,
+            animation:'spin 1.2s linear infinite' }}>
+            <Icon name="map" size={28} color={accent}/>
+          </div>
+          <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+          <div style={{ fontSize:18, fontWeight:700, color:'#1a1a1a', marginBottom:8 }}>Analyzing with AI…</div>
+          <div style={{ fontSize:13, color:'#8E8E93', lineHeight:1.6, maxWidth:260 }}>
+            Extracting trip details, dates, distances, and categories from your data
+          </div>
+          {fileInfo && (
+            <div style={{ marginTop:20, background:'white', borderRadius:10, padding:'10px 16px',
+              fontSize:12, color:'#3a3a3c', fontWeight:600, boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+              📄 {fileInfo.name}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── REVIEW PHASE ── */}
+      {phase === 'review' && trip && (
+        <div style={{ padding:'16px' }} className="screen-anim">
+          {/* Progress header */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div>
+              <div style={{ fontSize:13, color:'#8E8E93' }}>Review Trips</div>
+              <div style={{ fontSize:18, fontWeight:800, color:'#1a1a1a' }}>
+                {current+1} <span style={{fontSize:13,fontWeight:400,color:'#8E8E93'}}>of {parsed.length}</span>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:6 }}>
+              <div style={{ padding:'4px 10px', background:'#E8FBF0', borderRadius:20,
+                fontSize:11, fontWeight:700, color:'#34C759' }}>{approved.length} approved</div>
+              {skipped > 0 && <div style={{ padding:'4px 10px', background:'#F2F2F7', borderRadius:20,
+                fontSize:11, fontWeight:700, color:'#8E8E93' }}>{skipped} skipped</div>}
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ height:4, background:'#E5E5EA', borderRadius:2, marginBottom:20 }}>
+            <div style={{ height:'100%', width:`${((current)/parsed.length)*100}%`,
+              background:accent, borderRadius:2, transition:'width 0.4s ease' }}/>
+          </div>
+
+          {/* Trip card */}
+          <div style={{ background:'white', borderRadius:18, overflow:'hidden',
+            boxShadow:'0 2px 12px rgba(0,0,0,0.08)', marginBottom:16 }}>
+            {/* Category header */}
+            <div style={{ background:`linear-gradient(135deg, ${CAT_COLORS[editMode?editBuf.category:trip.category].bg} 0%, ${CAT_COLORS[editMode?editBuf.category:trip.category].bg}AA 100%)`,
+              padding:'14px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <CatPill cat={editMode ? editBuf.category : trip.category}/>
+              <span style={{ color:'rgba(255,255,255,0.9)', fontSize:13, fontWeight:600 }}>
+                {editMode ? editBuf.date : trip.date}
+              </span>
+            </div>
+
+            {!editMode ? (
+              /* View mode */
+              <div>
+                {/* Route */}
+                <div style={{ padding:'14px 16px', borderBottom:'0.5px solid #F0F0F5' }}>
+                  <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+                    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', paddingTop:3 }}>
+                      <div style={{ width:10, height:10, borderRadius:'50%', background:'#34C759' }}/>
+                      <div style={{ width:1.5, height:20, background:'#E5E5EA', margin:'3px 0' }}/>
+                      <div style={{ width:10, height:10, borderRadius:'50%', background:'#FF3B30' }}/>
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontSize:14, fontWeight:600, color:'#1a1a1a', marginBottom:16 }}>{trip.from || '—'}</div>
+                      <div style={{ fontSize:14, fontWeight:600, color:'#1a1a1a' }}>{trip.to || '—'}</div>
+                    </div>
+                  </div>
+                </div>
+                {[
+                  ['Miles', `${trip.miles} mi`],
+                  ['Est. Deduction', ded > 0 ? `$${ded.toFixed(2)}` : 'None (Personal)'],
+                  ['Purpose', trip.purpose || '—'],
+                  trip.entity ? ['Entity', trip.entity] : null,
+                ].filter(Boolean).map(([k,v]) => (
+                  <div key={k} style={{ padding:'10px 16px', borderBottom:'0.5px solid #F0F0F5',
+                    display:'flex', justifyContent:'space-between' }}>
+                    <span style={{ fontSize:13, color:'#8E8E93' }}>{k}</span>
+                    <span style={{ fontSize:13, fontWeight:600,
+                      color: k==='Est. Deduction' && ded>0 ? '#34C759' : '#1a1a1a' }}>{v}</span>
+                  </div>
+                ))}
+                <button onClick={startEdit} style={{ padding:'11px 16px', width:'100%',
+                  background:'none', border:'none', color:accent, fontSize:13, fontWeight:600,
+                  cursor:'pointer', outline:'none', display:'flex', alignItems:'center',
+                  justifyContent:'center', gap:6 }}>
+                  <Icon name="edit" size={14} color={accent}/> Edit this trip
+                </button>
+              </div>
+            ) : (
+              /* Edit mode */
+              <div style={{ padding:'14px 16px' }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'#8E8E93', textTransform:'uppercase',
+                  letterSpacing:0.5, marginBottom:12 }}>Edit Trip Details</div>
+                {[
+                  ['from','Start Location','text'],
+                  ['to','End Location','text'],
+                  ['miles','Miles','number'],
+                  ['date','Date','date'],
+                  ['purpose','Purpose','text'],
+                  ['entity','Entity / Client','text'],
+                ].map(([k,label,type]) => (
+                  <div key={k} style={{ marginBottom:10 }}>
+                    <div style={{ fontSize:11, color:'#8E8E93', fontWeight:500, marginBottom:3 }}>{label}</div>
+                    <input value={editBuf[k]} onChange={e=>setEB(k,e.target.value)} type={type}
+                      style={{ width:'100%', padding:'9px 12px', borderRadius:8,
+                        border:'1.5px solid #E5E5EA', fontSize:14, fontFamily:'Inter,sans-serif',
+                        outline:'none', color:'#1a1a1a', background:'white' }}/>
+                  </div>
+                ))}
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ fontSize:11, color:'#8E8E93', fontWeight:500, marginBottom:6 }}>Category</div>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                    {Object.keys(IRS_RATES).map(cat => (
+                      <button key={cat} onClick={()=>setEB('category',cat)} style={{
+                        padding:'5px 12px', borderRadius:20, border:'none',
+                        background: editBuf.category===cat ? CAT_COLORS[cat].bg : '#F2F2F7',
+                        color: editBuf.category===cat ? 'white' : '#3a3a3c',
+                        fontSize:12, fontWeight:600, cursor:'pointer', outline:'none',
+                      }}>{cat}</button>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={()=>setEditMode(false)} style={{
+                  width:'100%', padding:'10px', borderRadius:10, border:'1.5px solid #E5E5EA',
+                  background:'white', color:'#3a3a3c', fontSize:13, fontWeight:600,
+                  cursor:'pointer', outline:'none', marginTop:4,
+                }}>Done Editing</button>
+              </div>
+            )}
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display:'flex', gap:10 }}>
+            <button onClick={skip} style={{
+              flex:1, padding:'16px', borderRadius:14, border:'1.5px solid #E5E5EA',
+              background:'white', color:'#8E8E93', fontSize:15, fontWeight:600,
+              cursor:'pointer', outline:'none',
+            }}>Skip</button>
+            <button onClick={approve} style={{
+              flex:2, padding:'16px', borderRadius:14, border:'none',
+              background:'#34C759', color:'white', fontSize:15, fontWeight:700,
+              cursor:'pointer', outline:'none',
+              boxShadow:'0 4px 14px rgba(52,199,89,0.4)',
+            }}>✓ Add to Vault</button>
+          </div>
+
+          {/* Remaining trips preview */}
+          {parsed.length > current + 1 && (
+            <div style={{ marginTop:14 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'#8E8E93', textTransform:'uppercase',
+                letterSpacing:0.5, marginBottom:8 }}>Coming up</div>
+              {parsed.slice(current+1, current+3).map((t,i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:10,
+                  padding:'9px 12px', background:'white', borderRadius:10, marginBottom:6,
+                  opacity: 0.6 + (i===0 ? 0.2 : 0), boxShadow:'0 1px 3px rgba(0,0,0,0.05)' }}>
+                  <CatPill cat={t.category} small/>
+                  <span style={{ fontSize:12, color:'#3a3a3c', flex:1, overflow:'hidden',
+                    textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {t.from ? shortAddr(t.from) : '?'} → {t.to ? shortAddr(t.to) : '?'}
+                  </span>
+                  <span style={{ fontSize:11, color:'#8E8E93' }}>{t.miles} mi</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── DONE PHASE ── */}
+      {phase === 'done' && (
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+          minHeight:'65vh', padding:32, textAlign:'center' }} className="screen-anim">
+          <div style={{ width:72, height:72, borderRadius:'50%', background:'#34C75920',
+            display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20 }} className="pop-anim">
+            <Icon name="check" size={36} color="#34C759" strokeWidth={3}/>
+          </div>
+          <div style={{ fontSize:22, fontWeight:800, color:'#1a1a1a', marginBottom:8 }}>Import Complete!</div>
+          <div style={{ fontSize:13, color:'#8E8E93', lineHeight:1.6, marginBottom:28 }}>
+            <strong style={{color:'#34C759'}}>{approved.length} trips</strong> added to your vault
+            {skipped > 0 && <>, {skipped} skipped</>}
+          </div>
+          {approved.length > 0 && (
+            <div style={{ width:'100%', background:'white', borderRadius:16, overflow:'hidden',
+              boxShadow:'0 1px 8px rgba(0,0,0,0.08)', marginBottom:24 }}>
+              {approved.slice(0,4).map((t,i) => (
+                <div key={i} style={{ padding:'10px 14px', borderBottom:'0.5px solid #F0F0F5',
+                  display:'flex', alignItems:'center', gap:10 }}>
+                  <CatPill cat={t.category} small/>
+                  <span style={{ fontSize:12, color:'#1a1a1a', flex:1, overflow:'hidden',
+                    textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                    {shortAddr(t.from||'?')} → {shortAddr(t.to||'?')}
+                  </span>
+                  <span style={{ fontSize:11, color:'#8E8E93' }}>{t.miles}mi</span>
+                </div>
+              ))}
+              {approved.length > 4 && (
+                <div style={{ padding:'9px 14px', fontSize:12, color:'#8E8E93', textAlign:'center' }}>
+                  +{approved.length-4} more trips
+                </div>
+              )}
+            </div>
+          )}
+          <button onClick={finish} style={{
+            padding:'16px 40px', borderRadius:14, border:'none',
+            background:accent, color:'white', fontSize:16, fontWeight:700,
+            cursor:'pointer', outline:'none', boxShadow:`0 4px 16px ${accent}44`,
+          }}>View in My Trips →</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── MODALS: Delete / Paywall / Referral / Archive ─────────────
+function DeleteConfirmModal({ trip, accent, onCancel, onConfirm }) {
+  return (
+    <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.5)', zIndex:300,
+      display:'flex', alignItems:'center', justifyContent:'center', padding:24 }} className="screen-anim">
+      <div style={{ background:'white', borderRadius:18, padding:'24px 20px', width:'100%', maxWidth:340 }} className="pop-anim">
+        <div style={{ width:56, height:56, borderRadius:'50%', background:'#FFE5E2', margin:'0 auto 14px',
+          display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <Icon name="trash" size={26} color="#FF3B30" strokeWidth={2}/>
+        </div>
+        <div style={{ fontSize:18, fontWeight:800, color:'#1a1a1a', textAlign:'center', marginBottom:8 }}>
+          Delete this trip?
+        </div>
+        <div style={{ fontSize:13, color:'#3a3a3c', textAlign:'center', marginBottom:14, lineHeight:1.5 }}>
+          {trip.from} → {trip.to}<br/>
+          <span style={{ color:'#8E8E93' }}>{fmtMi(trip.miles)} · {fmtDate(trip.date)}</span>
+        </div>
+        <div style={{ background:'#FFF8E6', border:'1px solid #FF950040', borderRadius:10,
+          padding:'10px 12px', marginBottom:16, fontSize:12, color:'#A35F00', lineHeight:1.4 }}>
+          <b>Archived for 90 days.</b> You can restore it from Settings → Archive.
+          After 90 days it's permanently deleted.
+        </div>
+        <div style={{ display:'flex', gap:10 }}>
+          <button onClick={onCancel} style={{
+            flex:1, padding:'13px', borderRadius:12, border:'1.5px solid #E5E5EA',
+            background:'white', color:'#1a1a1a', fontSize:15, fontWeight:600,
+            cursor:'pointer', outline:'none', fontFamily:'inherit' }}>Cancel</button>
+          <button onClick={onConfirm} style={{
+            flex:1, padding:'13px', borderRadius:12, border:'none',
+            background:'#FF3B30', color:'white', fontSize:15, fontWeight:700,
+            cursor:'pointer', outline:'none', fontFamily:'inherit' }}>Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaywallModal({ accent, tripsThisMonth, freeLimit, bonusMonths, onClose, onStartTrial, onSubscribe, onShowReferral }) {
+  const totalFreeMonths = 1 + bonusMonths; // trial + bonus
+  return (
+    <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.5)', zIndex:300,
+      display:'flex', alignItems:'flex-end', justifyContent:'center' }} className="screen-anim">
+      <div style={{ background:'white', borderRadius:'24px 24px 0 0', padding:'24px 20px 28px',
+        width:'100%', maxHeight:'92%', overflowY:'auto' }} className="slide-up-anim">
+        <div style={{ width:40, height:4, borderRadius:2, background:'#E5E5EA', margin:'0 auto 18px' }}/>
+        <button onClick={onClose} style={{
+          position:'absolute', top:18, right:18, background:'none', border:'none',
+          cursor:'pointer', padding:6, fontFamily:'inherit' }}>
+          <Icon name="x" size={20} color="#8E8E93"/>
+        </button>
+        <div style={{ textAlign:'center', marginBottom:18 }}>
+          <div style={{ display:'inline-flex', padding:'6px 12px', borderRadius:20,
+            background:`${accent}15`, color:accent, fontSize:11, fontWeight:800, marginBottom:12, letterSpacing:0.5 }}>
+            {tripsThisMonth >= freeLimit ? `${freeLimit}/${freeLimit} FREE TRIPS USED` : 'UPGRADE TO PRO'}
+          </div>
+          <div style={{ fontSize:26, fontWeight:800, color:'#1a1a1a', marginBottom:6, lineHeight:1.15 }}>
+            Unlimited trips. <br/>Maximum deductions.
+          </div>
+          <div style={{ fontSize:13, color:'#8E8E93' }}>
+            Free plan: {freeLimit} trips/month. You've used {tripsThisMonth}.
+          </div>
+        </div>
+
+        {/* Pricing card */}
+        <div style={{ background:`linear-gradient(135deg, ${accent} 0%, #5856D6 100%)`,
+          borderRadius:18, padding:'20px', color:'white', marginBottom:14,
+          boxShadow:'0 8px 24px rgba(0,122,255,0.3)' }}>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, opacity:0.9, marginBottom:6 }}>MILEVAULT PRO</div>
+          <div style={{ display:'flex', alignItems:'baseline', gap:6, marginBottom:10 }}>
+            <span style={{ fontSize:38, fontWeight:800, lineHeight:1 }}>$9.99</span>
+            <span style={{ fontSize:14, opacity:0.85 }}>/ month</span>
+          </div>
+          <div style={{ fontSize:13, opacity:0.95, marginBottom:14, lineHeight:1.5 }}>
+            🎁 Get <b>30 days free</b> when you sign up{bonusMonths > 0 && <> + <b>{bonusMonths} bonus month{bonusMonths>1?'s':''}</b> from referrals</>}
+          </div>
+          {[
+            'Unlimited trip logging',
+            'AI receipt scanning + auto-categorize',
+            'IRS-compliant audit reports',
+            'Multi-business entity tracking',
+            'Refer friends → earn free months',
+          ].map((f,i) => (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6, fontSize:13 }}>
+              <div style={{ width:18, height:18, borderRadius:'50%', background:'rgba(255,255,255,0.25)',
+                display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <Icon name="check" size={11} color="white" strokeWidth={3}/>
+              </div>
+              {f}
+            </div>
+          ))}
+        </div>
+
+        <button onClick={onStartTrial} style={{
+          width:'100%', padding:'15px', borderRadius:14, border:'none',
+          background:accent, color:'white', fontSize:16, fontWeight:700,
+          cursor:'pointer', outline:'none', marginBottom:8, fontFamily:'inherit',
+          boxShadow:`0 4px 14px ${accent}50` }}>
+          Start {totalFreeMonths === 1 ? '30-day' : `${totalFreeMonths * 30}-day`} Free Trial
+        </button>
+        <button onClick={onSubscribe} style={{
+          width:'100%', padding:'13px', borderRadius:14, border:'1.5px solid #E5E5EA',
+          background:'white', color:'#1a1a1a', fontSize:14, fontWeight:600,
+          cursor:'pointer', outline:'none', marginBottom:14, fontFamily:'inherit' }}>
+          Subscribe now — $9.99/mo
+        </button>
+
+        <div onClick={onShowReferral} style={{
+          background:'#E8F8EE', border:'1px solid #34C75940', borderRadius:12,
+          padding:'12px 14px', display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}>
+          <div style={{ fontSize:22 }}>🎁</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:'#0A8043' }}>Refer a friend, get a free month</div>
+            <div style={{ fontSize:11, color:'#0A8043', opacity:0.8 }}>No annual cap · They sign up paid → you earn 1 month</div>
+          </div>
+          <Icon name="chevronR" size={14} color="#34C759"/>
+        </div>
+
+        <div style={{ fontSize:10, color:'#C7C7CC', textAlign:'center', marginTop:12 }}>
+          Cancel anytime · No commitment · Auto-renews after trial
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReferralModal({ accent, bonusMonths, onClose, onAddBonus }) {
+  const [code] = useState('JANE-' + Math.random().toString(36).slice(2,6).toUpperCase());
+  const [copied, setCopied] = useState(false);
+  const [referrals, setReferrals] = useState([
+    { name:'Sarah M.', status:'Joined · Pro', date:'Apr 18', earned:true },
+    { name:'Mike R.', status:'Pending signup', date:'Apr 22', earned:false },
+  ]);
+  const earnedCount = referrals.filter(r => r.earned).length;
+
+  const copyCode = () => {
+    navigator.clipboard?.writeText(`Try MileVault: milevault.app/?ref=${code}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.5)', zIndex:300,
+      display:'flex', alignItems:'flex-end', justifyContent:'center' }} className="screen-anim">
+      <div style={{ background:'white', borderRadius:'24px 24px 0 0', padding:'24px 20px 28px',
+        width:'100%', maxHeight:'92%', overflowY:'auto' }} className="slide-up-anim">
+        <div style={{ width:40, height:4, borderRadius:2, background:'#E5E5EA', margin:'0 auto 18px' }}/>
+        <button onClick={onClose} style={{
+          position:'absolute', top:18, right:18, background:'none', border:'none',
+          cursor:'pointer', padding:6, fontFamily:'inherit' }}>
+          <Icon name="x" size={20} color="#8E8E93"/>
+        </button>
+
+        <div style={{ textAlign:'center', marginBottom:18 }}>
+          <div style={{ fontSize:38, marginBottom:8 }}>🎁</div>
+          <div style={{ fontSize:22, fontWeight:800, color:'#1a1a1a', marginBottom:6 }}>Give a month, get a month</div>
+          <div style={{ fontSize:13, color:'#8E8E93', lineHeight:1.5, padding:'0 12px' }}>
+            Friends get 30 days free. When they upgrade to Pro, you get <b>1 free month</b> added to your plan. No cap.
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display:'flex', gap:10, marginBottom:18 }}>
+          {[
+            ['Referred', referrals.length, '#007AFF'],
+            ['Earned', earnedCount, '#34C759'],
+            ['Bonus mo.', bonusMonths, '#FF9500'],
+          ].map(([l,v,c]) => (
+            <div key={l} style={{ flex:1, background:'#F8F9FB', borderRadius:12, padding:'12px 8px', textAlign:'center' }}>
+              <div style={{ fontSize:24, fontWeight:800, color:c }}>{v}</div>
+              <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginTop:2 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Code */}
+        <div style={{ background:`linear-gradient(135deg, ${accent}15, ${accent}05)`,
+          border:`1.5px dashed ${accent}50`, borderRadius:14, padding:14, marginBottom:14, textAlign:'center' }}>
+          <div style={{ fontSize:10, color:'#8E8E93', fontWeight:700, letterSpacing:0.5, marginBottom:6 }}>YOUR REFERRAL CODE</div>
+          <div style={{ fontSize:24, fontWeight:800, color:accent, letterSpacing:2, fontFamily:'SF Mono, monospace' }}>{code}</div>
+        </div>
+
+        <button onClick={copyCode} style={{
+          width:'100%', padding:'14px', borderRadius:12, border:'none',
+          background:copied ? '#34C759' : accent, color:'white', fontSize:15, fontWeight:700,
+          cursor:'pointer', outline:'none', marginBottom:8, fontFamily:'inherit',
+          display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+          <Icon name={copied ? 'check' : 'share'} size={16} color="white" strokeWidth={2.5}/>
+          {copied ? 'Link Copied!' : 'Copy Invite Link'}
+        </button>
+        <button onClick={onAddBonus} style={{
+          width:'100%', padding:'12px', borderRadius:12, border:'1.5px solid #E5E5EA',
+          background:'white', color:'#3a3a3c', fontSize:13, fontWeight:600,
+          cursor:'pointer', outline:'none', marginBottom:18, fontFamily:'inherit' }}>
+          Simulate referral earned (+1 month)
+        </button>
+
+        {/* History */}
+        <div style={{ fontSize:12, fontWeight:700, color:'#8E8E93', letterSpacing:0.5, marginBottom:8, textTransform:'uppercase' }}>
+          Your Referrals
+        </div>
+        {referrals.map((r,i) => (
+          <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0',
+            borderBottom: i < referrals.length-1 ? '0.5px solid #F0F0F5' : 'none' }}>
+            <div style={{ width:36, height:36, borderRadius:'50%',
+              background: r.earned ? '#34C75920' : '#F2F2F7',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:13, fontWeight:700, color: r.earned ? '#34C759' : '#8E8E93' }}>
+              {r.name.split(' ').map(n=>n[0]).join('')}
+            </div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:14, fontWeight:600, color:'#1a1a1a' }}>{r.name}</div>
+              <div style={{ fontSize:11, color: r.earned ? '#34C759' : '#8E8E93' }}>{r.status} · {r.date}</div>
+            </div>
+            {r.earned && (
+              <div style={{ fontSize:11, fontWeight:700, color:'#34C759',
+                background:'#E8F8EE', padding:'4px 8px', borderRadius:6 }}>+1 mo</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ArchiveModal({ accent, archive, onClose, onRestore, onPurge }) {
+  const daysRemaining = (archivedAt) => {
+    const ms = (archivedAt + 90*24*60*60*1000) - Date.now();
+    return Math.max(0, Math.ceil(ms / (24*60*60*1000)));
+  };
+
+  return (
+    <div style={{ position:'absolute', inset:0, background:'white', zIndex:250, overflowY:'auto' }} className="slide-up-anim">
+      <div style={{ background:'#F2F2F7', padding:'56px 16px 16px', position:'sticky', top:0, zIndex:1,
+        borderBottom:'0.5px solid #E5E5EA' }}>
+        <button onClick={onClose} style={{
+          position:'absolute', top:50, right:16, background:'none', border:'none',
+          cursor:'pointer', padding:6, fontFamily:'inherit' }}>
+          <Icon name="x" size={20} color="#3a3a3c"/>
+        </button>
+        <div style={{ fontSize:22, fontWeight:800, color:'#1a1a1a' }}>Archive</div>
+        <div style={{ fontSize:12, color:'#8E8E93', marginTop:2 }}>
+          Deleted trips · auto-purge after 90 days
+        </div>
+      </div>
+
+      <div style={{ padding:'14px 16px' }}>
+        {archive.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'60px 20px' }}>
+            <div style={{ width:64, height:64, borderRadius:'50%', background:'#F2F2F7',
+              margin:'0 auto 14px', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <Icon name="trash" size={28} color="#C7C7CC"/>
+            </div>
+            <div style={{ fontSize:16, fontWeight:700, color:'#1a1a1a', marginBottom:6 }}>Archive is empty</div>
+            <div style={{ fontSize:13, color:'#8E8E93', lineHeight:1.5 }}>
+              Deleted trips will appear here for 90 days before being permanently removed.
+            </div>
+          </div>
+        ) : (
+          <>
+            <div style={{ background:'#FFF8E6', border:'1px solid #FF950040', borderRadius:10,
+              padding:'10px 12px', marginBottom:12, fontSize:12, color:'#A35F00', lineHeight:1.4 }}>
+              ⏳ Trips here are recoverable. After 90 days from deletion they're gone forever.
+            </div>
+            {archive.map((a,i) => {
+              const days = daysRemaining(a.archivedAt);
+              const urgent = days <= 7;
+              return (
+                <div key={a.trip.id} style={{ background:'white', borderRadius:14, padding:'12px 14px',
+                  marginBottom:8, boxShadow:'0 1px 4px rgba(0,0,0,0.05)' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:14, fontWeight:600, color:'#1a1a1a',
+                        overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {a.trip.from} → {a.trip.to}
+                      </div>
+                      <div style={{ fontSize:11, color:'#8E8E93', marginTop:2 }}>
+                        {fmtMi(a.trip.miles)} · {fmtDate(a.trip.date)} · {a.trip.category}
+                      </div>
+                    </div>
+                    <div style={{ fontSize:11, fontWeight:700, padding:'4px 8px', borderRadius:6,
+                      background: urgent ? '#FFE5E2' : '#F2F2F7',
+                      color: urgent ? '#C5281C' : '#8E8E93' }}>
+                      {days}d left
+                    </div>
+                  </div>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <button onClick={()=>onRestore(a.trip.id)} style={{
+                      flex:1, padding:'8px', borderRadius:8, border:`1px solid ${accent}`,
+                      background:'white', color:accent, fontSize:12, fontWeight:600,
+                      cursor:'pointer', outline:'none', fontFamily:'inherit' }}>Restore</button>
+                    <button onClick={()=>{
+                      if (window.confirm('Permanently delete? This cannot be undone.')) onPurge(a.trip.id);
+                    }} style={{
+                      flex:1, padding:'8px', borderRadius:8, border:'1px solid #FFB3AC',
+                      background:'white', color:'#FF3B30', fontSize:12, fontWeight:600,
+                      cursor:'pointer', outline:'none', fontFamily:'inherit' }}>Delete forever</button>
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── MAIN APP ───────────────────────────────────────────────────
+function App() {
+  const saved = JSON.parse(localStorage.getItem('mv_state') || '{}');
+  const [screen, setScreen] = useState(saved.screen || 'home');
+  const [trips, setTrips] = useState(SAMPLE_TRIPS);
+  const [archive, setArchive] = useState([]); // {trip, archivedAt}
+  const [selectedTrip, setSelectedTrip] = useState(null);
+  const [dark, setDark] = useState(false);
+  const [accent, setAccent] = useState('#007AFF');
+  const [prevScreen, setPrevScreen] = useState(null);
+  // Mobile detection — skip the device frame on real phones
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 500);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 500);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Subscription / billing
+  const [plan, setPlan] = useState(saved.plan || 'free'); // 'free' | 'trial' | 'pro'
+  const [trialEndsAt, setTrialEndsAt] = useState(saved.trialEndsAt || null);
+  const [bonusMonths, setBonusMonths] = useState(saved.bonusMonths || 0);
+  const [proUntil, setProUntil] = useState(saved.proUntil || null);
+  // Modals
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // trip pending delete
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [showReferral, setShowReferral] = useState(false);
+  const [showArchive, setShowArchive] = useState(false);
+
+  // FREE TIER LIMIT — 5 new trips per calendar month
+  const FREE_LIMIT = 5;
+  const monthKey = new Date().toISOString().slice(0,7); // YYYY-MM
+  const tripsThisMonth = trips.filter(t => (t.id > 1e10) && new Date(t.id).toISOString().slice(0,7) === monthKey).length;
+  const isPaid = plan === 'pro' || plan === 'trial';
+  const canAddTrip = isPaid || tripsThisMonth < FREE_LIMIT;
+  const remainingFree = Math.max(0, FREE_LIMIT - tripsThisMonth);
+
+  useEffect(() => {
+    localStorage.setItem('mv_state', JSON.stringify({ screen, plan, trialEndsAt, bonusMonths, proUntil }));
+  }, [screen, plan, trialEndsAt, bonusMonths, proUntil]);
+
+  // Auto-purge archive items older than 90 days
+  useEffect(() => {
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    setArchive(prev => prev.filter(a => a.archivedAt > cutoff));
+  }, []);
+
+  useEffect(() => {
+    const handler = e => {
+      if (e.detail) {
+        if (e.detail.accent) setAccent(e.detail.accent);
+        if (e.detail.theme) setDark(e.detail.theme === 'dark');
+        if (e.detail.screen && ['home','trips','add','import','reports','benefits','settings'].includes(e.detail.screen)) {
+          handleTab(e.detail.screen);
+        }
+      }
+    };
+    window.addEventListener('tweakChange', handler);
+    return () => window.removeEventListener('tweakChange', handler);
+  }, [screen]);
+
+  const handleTab = (tab) => {
+    if (tab === 'add') {
+      if (!canAddTrip) { setShowPaywall(true); return; }
+      setPrevScreen(screen); setScreen('add'); return;
+    }
+    if (tab === 'import') {
+      if (!canAddTrip) { setShowPaywall(true); return; }
+      setPrevScreen(screen); setScreen('import'); return;
+    }
+    setScreen(tab);
+  };
+
+  const handleAddSave = (form) => {
+    const newTrip = { id: Date.now(), ...form, miles: parseFloat(form.miles) };
+    setTrips(prev => [newTrip, ...prev]);
+  };
+
+  // Step 1: Trip Detail asks to delete → opens confirmation modal
+  const requestDelete = (id) => {
+    const trip = trips.find(t => t.id === id);
+    if (trip) setDeleteConfirm(trip);
+  };
+
+  // Step 2: User confirms → archive (90-day soft delete)
+  const confirmDelete = () => {
+    if (!deleteConfirm) return;
+    setArchive(prev => [{ trip: deleteConfirm, archivedAt: Date.now() }, ...prev]);
+    setTrips(prev => prev.filter(t => t.id !== deleteConfirm.id));
+    setDeleteConfirm(null);
+    setSelectedTrip(null);
+  };
+
+  const restoreFromArchive = (id) => {
+    const item = archive.find(a => a.trip.id === id);
+    if (!item) return;
+    setTrips(prev => [item.trip, ...prev]);
+    setArchive(prev => prev.filter(a => a.trip.id !== id));
+  };
+
+  const purgeFromArchive = (id) => {
+    setArchive(prev => prev.filter(a => a.trip.id !== id));
+  };
+
+  const startTrial = () => {
+    const ends = Date.now() + 30 * 24 * 60 * 60 * 1000;
+    setPlan('trial');
+    setTrialEndsAt(ends);
+    setShowPaywall(false);
+  };
+
+  const subscribePro = () => {
+    setPlan('pro');
+    setProUntil(Date.now() + (30 + bonusMonths * 30) * 24 * 60 * 60 * 1000);
+    setShowPaywall(false);
+  };
+
+  const SCREEN_TITLES = {
+    home: 'MileVault', trips: 'My Trips', add: 'New Trip', import: 'Import Trips',
+    reports: 'Reports', benefits: 'Benefits', settings: 'Settings',
+  };
+
+  const tabForScreen = ['home','trips','reports','benefits','settings'].includes(screen) ? screen : prevScreen;
+
+  const appInner = (
+      <div style={{ position: 'relative', height: '100%', overflowY: 'hidden', background: dark ? '#1C1C1E' : '#F2F2F7' }}>
+        {/* Screen renderer */}
+        {screen === 'home' && (
+          <div style={{ height: '100%', overflowY: 'auto' }}>
+            <HomeScreen trips={trips} accent={accent} onAddTrip={() => handleTab('add')} onTripPress={setSelectedTrip}/>
+          </div>
+        )}
+        {screen === 'trips' && (
+          <div style={{ height: '100%', overflowY: 'auto' }}>
+            <TripsScreen trips={trips} accent={accent} onTripPress={setSelectedTrip} onAddTrip={() => handleTab('add')} onImport={() => handleTab('import')}/>
+          </div>
+        )}
+        {screen === 'add' && (
+          <div style={{ height: '100%', overflowY: 'auto' }}>
+            <AddTripScreen accent={accent} onSave={handleAddSave} onClose={() => setScreen(prevScreen || 'home')}/>
+          </div>
+        )}
+        {screen === 'import' && (
+          <div style={{ height: '100%', overflowY: 'auto' }}>
+            <ImportScreen accent={accent} onSave={handleAddSave} onClose={() => setScreen('trips')}/>
+          </div>
+        )}
+        {screen === 'reports' && (
+          <div style={{ height: '100%', overflowY: 'auto' }}>
+            <ReportsScreen trips={trips} accent={accent} onTripPress={setSelectedTrip}/>
+          </div>
+        )}
+        {screen === 'benefits' && (
+          <div style={{ height: '100%', overflowY: 'auto' }}>
+            <BenefitsScreen accent={accent}/>
+          </div>
+        )}
+        {screen === 'settings' && (
+          <div style={{ height: '100%', overflowY: 'auto' }}>
+            <SettingsScreen accent={accent} dark={dark} onToggleDark={() => setDark(!dark)}
+              plan={plan} trialEndsAt={trialEndsAt} proUntil={proUntil} bonusMonths={bonusMonths}
+              tripsThisMonth={tripsThisMonth} freeLimit={FREE_LIMIT}
+              archiveCount={archive.length}
+              onShowArchive={() => setShowArchive(true)}
+              onShowPaywall={() => setShowPaywall(true)}
+              onShowReferral={() => setShowReferral(true)}/>
+          </div>
+        )}
+
+        {/* Trip detail overlay */}
+        {selectedTrip && (
+          <TripDetail trip={selectedTrip} accent={accent}
+            onClose={() => setSelectedTrip(null)}
+            onDelete={requestDelete}/>
+        )}
+
+        {/* Delete Confirmation */}
+        {deleteConfirm && (
+          <DeleteConfirmModal trip={deleteConfirm} accent={accent}
+            onCancel={() => setDeleteConfirm(null)}
+            onConfirm={confirmDelete}/>
+        )}
+
+        {/* Paywall */}
+        {showPaywall && (
+          <PaywallModal accent={accent}
+            tripsThisMonth={tripsThisMonth} freeLimit={FREE_LIMIT} bonusMonths={bonusMonths}
+            onClose={() => setShowPaywall(false)}
+            onStartTrial={startTrial}
+            onSubscribe={subscribePro}
+            onShowReferral={() => { setShowPaywall(false); setShowReferral(true); }}/>
+        )}
+
+        {/* Referral */}
+        {showReferral && (
+          <ReferralModal accent={accent} bonusMonths={bonusMonths}
+            onClose={() => setShowReferral(false)}
+            onAddBonus={() => setBonusMonths(b => b + 1)}/>
+        )}
+
+        {/* Archive */}
+        {showArchive && (
+          <ArchiveModal accent={accent} archive={archive}
+            onClose={() => setShowArchive(false)}
+            onRestore={restoreFromArchive}
+            onPurge={purgeFromArchive}/>
+        )}
+
+        {/* Tab bar */}
+        {!selectedTrip && (
+          <TabBar active={tabForScreen} onTab={handleTab} accent={accent}/>
+        )}
+      </div>
+  );
+  if (isMobile) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0,
+        background: dark ? '#1C1C1E' : '#F2F2F7',
+        fontFamily: 'Inter, -apple-system, sans-serif',
+        WebkitFontSmoothing: 'antialiased',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
+        {appInner}
+      </div>
+    );
+  }
+  return (
+    <IOSDevice width={402} height={874} dark={dark} title={SCREEN_TITLES[screen]}>
+      {appInner}
+    </IOSDevice>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // SW registration failed (e.g. file:// protocol) — app still works
+    });
+  });
+}
+</script>
+</body>
+</html>
