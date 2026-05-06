@@ -12,10 +12,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MileVault">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23007AFF'/><text y='78' x='12' font-size='72'>🚗</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23007AFF'/><text y='78' x='12' font-size='72'>🚗</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  @keyframes gps-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(52,199,89,0.6); }
+    70%  { box-shadow: 0 0 0 12px rgba(52,199,89,0); }
+    100% { box-shadow: 0 0 0 0 rgba(52,199,89,0); }
+  }
+  .gps-dot { animation: gps-pulse 1.5s infinite; }
+  .leaflet-container { font-family: Inter, -apple-system, sans-serif; }
+</style>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
@@ -721,23 +732,14 @@ const getCurrentAddress = () => new Promise((resolve, reject) => {
   }, (err) => reject(err.message), { enableHighAccuracy: true, timeout: 10000 });
 });
 
-const SAMPLE_TRIPS = [
-  { id:1, date:'2026-04-18', from:'Home Office', to:'TEJ Pharmacy – Austin', miles:12.4, category:'Business', purpose:'Inventory check', entity:'TEJ' },
-  { id:2, date:'2026-04-17', from:'Home', to:'St. David\'s Medical Center', miles:8.1, category:'Medical', purpose:'Doctor appointment', entity:'' },
-  { id:3, date:'2026-04-16', from:'TEJ Pharmacy', to:'Red Cross Volunteer Center', miles:5.7, category:'Charity', purpose:'Volunteer work', entity:'' },
-  { id:4, date:'2026-04-15', from:'Warehouse', to:'New Apartment, Round Rock TX', miles:22.3, category:'Moving', purpose:'Moving boxes', entity:'' },
-  { id:5, date:'2026-04-14', from:'Home', to:'Grocery Store', miles:3.2, category:'Personal', purpose:'Personal errand', entity:'' },
-  { id:6, date:'2026-04-13', from:'DIA Logistics HQ', to:'Distribution Center', miles:18.9, category:'Business', purpose:'Operations review', entity:'DIA' },
-  { id:7, date:'2026-04-12', from:'Home', to:'Children\'s Hospital', miles:11.5, category:'Medical', purpose:'Follow-up visit', entity:'' },
-  { id:8, date:'2026-04-11', from:'B&B Storefront', to:'Wholesale Supplier', miles:24.3, category:'Business', purpose:'Supply pickup', entity:'B&B' },
-  { id:9, date:'2026-04-10', from:'Home', to:'Food Bank', miles:9.2, category:'Charity', purpose:'Food donation drop-off', entity:'' },
-  { id:10, date:'2026-04-09', from:'TEJ Pharmacy', to:'Client Site – South Austin', miles:33.6, category:'Business', purpose:'Pharmacy delivery run', entity:'TEJ' },
-  { id:11, date:'2026-04-08', from:'DIA Logistics HQ', to:'Port of Houston', miles:165.2, category:'Business', purpose:'Shipment coordination', entity:'DIA' },
-  { id:12, date:'2026-04-07', from:'B&B Storefront', to:'Trade Show Convention Center', miles:14.8, category:'Business', purpose:'Trade show booth setup', entity:'B&B' },
-  { id:13, date:'2026-04-06', from:'TEJ Pharmacy', to:'Compliance Office', miles:9.6, category:'Business', purpose:'Regulatory filing', entity:'TEJ' },
-  { id:14, date:'2026-04-05', from:'Home', to:'DIA Branch Office', miles:21.1, category:'Business', purpose:'Branch audit', entity:'DIA' },
-  { id:15, date:'2026-04-04', from:'B&B Storefront', to:'Bank of Austin', miles:6.4, category:'Business', purpose:'Deposit & banking', entity:'B&B' },
-];
+const SAMPLE_TRIPS = [];
+
+// Distance between two GPS coords in miles (Haversine)
+const haversine = (lat1,lon1,lat2,lon2) => {
+  const R=3958.8, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.asin(Math.sqrt(a));
+};
 
 const PARTNERS = [
   { name:'Hiscox', category:'Business Insurance', desc:'Small business insurance tailored for freelancers. Save up to 15%.', color:'#1B4F8A', badge:'Exclusive Deal', url:'' },
@@ -794,6 +796,42 @@ const shortAddr = a => a.split(',')[0];
 const deduction = (miles, cat) => miles * (IRS_RATES[cat] || 0);
 
 // ─── TAB BAR ────────────────────────────────────────────────────
+function AddChoiceModal({ accent, onTrack, onManual, onClose }) {
+  return (
+    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)',
+      zIndex:2000, display:'flex', alignItems:'flex-end', fontFamily:'Inter,-apple-system,sans-serif' }}>
+      <div onClick={e=>e.stopPropagation()} style={{
+        width:'100%', background:'white', borderRadius:'20px 20px 0 0',
+        padding:'14px 20px 44px', boxShadow:'0 -4px 30px rgba(0,0,0,0.15)' }}>
+        <div style={{ width:36, height:4, background:'#E5E5EA', borderRadius:2, margin:'0 auto 20px' }}/>
+        <div style={{ fontSize:17, fontWeight:800, color:'#1a1a1a', marginBottom:6, textAlign:'center' }}>Log a Trip</div>
+        <div style={{ fontSize:13, color:'#8E8E93', textAlign:'center', marginBottom:24 }}>How would you like to record it?</div>
+        <button onClick={onTrack} style={{
+          width:'100%', padding:'16px', borderRadius:14, border:'none',
+          background:`linear-gradient(135deg, ${accent} 0%, #34C759 100%)`,
+          color:'white', fontSize:16, fontWeight:700, cursor:'pointer',
+          fontFamily:'inherit', marginBottom:12,
+          display:'flex', alignItems:'center', justifyContent:'center', gap:10,
+          boxShadow:`0 4px 16px ${accent}44` }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          GPS Track — Start Now
+        </button>
+        <button onClick={onManual} style={{
+          width:'100%', padding:'16px', borderRadius:14, border:`1.5px solid ${accent}`,
+          background:'none', color:accent, fontSize:16, fontWeight:600, cursor:'pointer',
+          fontFamily:'inherit', marginBottom:10,
+          display:'flex', alignItems:'center', justifyContent:'center', gap:10 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Log Manually
+        </button>
+        <button onClick={onClose} style={{
+          width:'100%', padding:'12px', borderRadius:14, border:'none',
+          background:'none', color:'#8E8E93', fontSize:14, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 function TabBar({ active, onTab, accent }) {
   const tabs = [
     { id:'home', icon:'home', label:'Home' },
@@ -959,7 +997,7 @@ function TripRow({ trip, accent, onPress }) {
 }
 
 // ─── HOME SCREEN ────────────────────────────────────────────────
-function HomeScreen({ trips, accent, onAddTrip, onTripPress }) {
+function HomeScreen({ trips, accent, onAddTrip, onTripPress, onStartTrip }) {
   const totalMiles = trips.reduce((s,t)=>s+t.miles,0);
   const totalDed = trips.reduce((s,t)=>s+deduction(t.miles,t.category),0);
   const byCategory = {};
@@ -1005,8 +1043,8 @@ function HomeScreen({ trips, accent, onAddTrip, onTripPress }) {
         </div>
       </div>
 
-      {/* Category breakdown */}
-      <div style={{ padding: '16px 16px 0' }}>
+      {/* Category breakdown — only show when there are trips */}
+      {Object.keys(byCategory).length > 0 && <div style={{ padding: '16px 16px 0' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
           By Category
         </div>
@@ -1031,43 +1069,57 @@ function HomeScreen({ trips, accent, onAddTrip, onTripPress }) {
             );
           })}
         </div>
-      </div>
+      </div>}
 
-      {/* Quick action */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <button onClick={onAddTrip} style={{
-          width: '100%', background: 'white', border: `1.5px dashed ${accent}55`,
-          borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center',
-          gap: 12, cursor: 'pointer', outline: 'none',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-        }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: `${accent}15`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name="plus" size={18} color={accent}/>
-          </div>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>Log a Trip</div>
-            <div style={{ fontSize: 12, color: '#8E8E93' }}>Add mileage manually or use GPS</div>
-          </div>
-          <div style={{ marginLeft: 'auto' }}>
-            <Icon name="chevronR" size={16} color="#C7C7CC"/>
-          </div>
+      {/* Big START button */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', padding:'28px 20px 8px' }}>
+        <button onClick={onStartTrip} style={{
+          width:170, height:170, borderRadius:'50%', border:'none', cursor:'pointer', outline:'none',
+          background:`linear-gradient(145deg, ${accent} 0%, #34C759 100%)`,
+          boxShadow:`0 12px 40px ${accent}55, 0 4px 12px rgba(0,0,0,0.15)`,
+          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6,
+          transition:'transform 0.12s, box-shadow 0.12s',
+        }}
+          onTouchStart={e=>e.currentTarget.style.transform='scale(0.96)'}
+          onTouchEnd={e=>e.currentTarget.style.transform='scale(1)'}>
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span style={{ color:'white', fontSize:15, fontWeight:900, letterSpacing:2 }}>START</span>
         </button>
+        <div style={{ fontSize:13, color:'#8E8E93', marginTop:14, textAlign:'center' }}>
+          Tap to start tracking your trip
+        </div>
+        <button onClick={onAddTrip} style={{
+          marginTop:14, background:'none', border:`1px solid ${accent}44`,
+          borderRadius:20, padding:'8px 20px', color:accent, fontSize:13, fontWeight:600,
+          cursor:'pointer', outline:'none', fontFamily:'inherit'
+        }}>+ Log manually</button>
       </div>
 
       {/* Recent trips */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-            Recent Trips
+      {trips.length > 0 && (
+        <div style={{ padding: '16px 16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#6B6B6B', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Recent Trips
+            </div>
+          </div>
+          <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+            {trips.slice(0,4).map(trip => (
+              <TripRow key={trip.id} trip={trip} accent={accent} onPress={() => onTripPress(trip)}/>
+            ))}
           </div>
         </div>
-        <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
-          {trips.slice(0,4).map(trip => (
-            <TripRow key={trip.id} trip={trip} accent={accent} onPress={() => onTripPress(trip)}/>
-          ))}
+      )}
+      {trips.length === 0 && (
+        <div style={{ margin:'8px 16px 0', background:'white', borderRadius:16,
+          padding:'32px 20px', textAlign:'center', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Icon name="map" size={36} color="#C7C7CC"/>
+          <div style={{ fontSize:15, fontWeight:700, color:'#3a3a3c', marginTop:12, marginBottom:6 }}>No trips yet</div>
+          <div style={{ fontSize:13, color:'#8E8E93', lineHeight:1.5 }}>
+            Tap the START button above to track your first trip with live GPS, or tap + to log manually.
+          </div>
         </div>
-      </div>
+      )}
 
       {/* IRS rate banner */}
       <div style={{ margin: '16px 16px 0' }}>
@@ -1148,7 +1200,12 @@ function TripsScreen({ trips, accent, onTripPress, onAddTrip, onImport, onDelete
           {filtered.length === 0 ? (
             <div style={{ padding: '40px 20px', textAlign: 'center', color: '#8E8E93' }}>
               <Icon name="car" size={32} color="#C7C7CC"/>
-              <div style={{ marginTop: 8, fontSize: 14 }}>No trips found</div>
+              <div style={{ marginTop: 8, fontSize: 14, fontWeight: 600 }}>
+                {trips.length === 0 ? 'No trips logged yet' : 'No trips match your search'}
+              </div>
+              <div style={{ marginTop: 4, fontSize: 12, color: '#C7C7CC' }}>
+                {trips.length === 0 ? 'Go to Home and tap START to track your first trip' : 'Try a different search or filter'}
+              </div>
             </div>
           ) : filtered.map(trip => (
             <SwipeableRow key={trip.id} onDelete={() => onDeleteTrip && onDeleteTrip(trip.id)}>
@@ -2212,6 +2269,7 @@ function SettingsScreen({ accent, dark, onToggleDark, plan='free', trialEndsAt, 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user ? user.name : 'Guest'}</div>
             <div style={{ fontSize: 13, color: '#8E8E93', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user ? user.email : ''}</div>
+            {user && user.phone && <div style={{ fontSize: 12, color: '#C7C7CC', marginTop: 1 }}>{user.phone}</div>}
           </div>
         </div>
         <div style={{ display: 'flex', borderTop: '0.5px solid #F0F0F5' }}>
@@ -2369,50 +2427,39 @@ function ImportScreen({ accent, onSave, onClose }) {
     if (file) readFile(file);
   };
 
-  const parseWithAI = async () => {
+  const parseWithAI = () => {
     setPhase('parsing'); setParseError('');
-    const prompt = `You are parsing mileage/trip records for a mileage tracking app called MileVault. 
-Extract ALL trips from the following data. For each trip return a JSON array of objects with these exact fields:
-- date (YYYY-MM-DD format, use 2026 if year unclear)
-- from (start address or location name)
-- to (end address or location name)  
-- miles (number, decimal ok)
-- category (one of: Business, Medical, Charity, Moving, Personal)
-- purpose (short description)
-- entity (client/business name, or empty string)
-
-Rules:
-- If miles not given but addresses are, estimate based on context clues or put 0
-- Infer category from purpose if not stated
-- Return ONLY valid JSON array, no other text, no markdown fences
-
-Data to parse:
-${rawText.slice(0, 3000)}`;
-
     try {
-      const result = await window.claude.complete(prompt);
-      // Extract JSON from response
-      const match = result.match(/\[[\s\S]*\]/);
-      if (!match) throw new Error('No JSON array found');
-      const trips = JSON.parse(match[0]);
-      if (!Array.isArray(trips) || trips.length === 0) throw new Error('No trips found');
-      // Sanitize
-      const clean = trips.map((t, i) => ({
-        id: Date.now() + i,
-        date: t.date || new Date().toISOString().split('T')[0],
-        from: t.from || '',
-        to: t.to || '',
-        miles: parseFloat(t.miles) || 0,
-        category: ['Business','Medical','Charity','Moving','Personal'].includes(t.category) ? t.category : 'Business',
-        purpose: t.purpose || '',
-        entity: t.entity || '',
-      }));
-      setParsed(clean);
-      setCurrent(0);
-      setApproved([]);
-      setPhase('review');
+      const text = rawText.trim();
+      if (!text) throw new Error('No data to parse');
+      const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+      if (lines.length < 2) throw new Error('Need at least a header row and one data row');
+      const delim = lines[0].includes('\t') ? '\t' : ',';
+      const headers = lines[0].split(delim).map(h=>h.replace(/["']/g,'').trim().toLowerCase());
+      const idx = (keys) => { for(const k of keys){ const i=headers.findIndex(h=>h.includes(k)); if(i>=0) return i; } return -1; };
+      const dateI = idx(['date','day']), fromI = idx(['from','start','origin','pickup']),
+            toI   = idx(['to','end','dest','drop']), milesI = idx(['mile','dist','km','odometer']),
+            catI  = idx(['cat','type']), purI = idx(['purp','reason','note','desc']);
+      const VALID_CATS = ['Business','Medical','Charity','Moving','Personal'];
+      const clean = lines.slice(1).map((line, i) => {
+        const cols = line.split(delim).map(c=>c.replace(/^"|"$/g,'').trim());
+        const rawCat = catI>=0 ? cols[catI]||'' : '';
+        const cat = VALID_CATS.find(c=>c.toLowerCase()===rawCat.toLowerCase()) || 'Business';
+        return {
+          id: Date.now()+i,
+          date: dateI>=0 ? cols[dateI] : new Date().toISOString().slice(0,10),
+          from: fromI>=0 ? cols[fromI] : '',
+          to:   toI>=0   ? cols[toI]   : '',
+          miles: milesI>=0 ? parseFloat(cols[milesI])||0 : 0,
+          category: cat,
+          purpose: purI>=0 ? cols[purI] : '',
+          entity: '',
+        };
+      }).filter(t => t.from||t.to||t.miles>0);
+      if (clean.length === 0) throw new Error('No valid trips found. Make sure your CSV has columns like: Date, From, To, Miles, Category');
+      setParsed(clean); setCurrent(0); setApproved([]); setPhase('review');
     } catch(err) {
-      setParseError('Could not extract trips: ' + err.message + '. Try pasting the text manually below.');
+      setParseError(err.message);
       setPhase('upload');
     }
   };
@@ -2514,7 +2561,7 @@ ${rawText.slice(0, 3000)}`;
               background: (!rawText && !fileInfo) ? '#C7C7CC' : accent,
               color:'white', fontSize:16, fontWeight:700, cursor: (!rawText && !fileInfo) ? 'not-allowed' : 'pointer',
               outline:'none', boxShadow: (!rawText && !fileInfo) ? 'none' : `0 4px 16px ${accent}44`,
-            }}>Extract Trips with AI →</button>
+            }}>Parse & Import Trips →</button>
         </div>
       )}
 
@@ -3311,6 +3358,333 @@ function RegistrationScreen({ onComplete, accent = '#007AFF' }) {
   );
 }
 
+// ─── TRACKING SCREEN ────────────────────────────────────────────
+function TrackingScreen({ accent, onTripEnd, onCancel }) {
+  const mapDiv  = useRef(null);
+  const mapObj  = useRef(null);
+  const markerRef   = useRef(null);
+  const polyRef     = useRef(null);
+  const watchIdRef  = useRef(null);
+  const timerRef    = useRef(null);
+  const coordsRef   = useRef([]);
+
+  const [status,   setStatus]   = useState('starting'); // starting|tracking|paused
+  const [seconds,  setSeconds]  = useState(0);
+  const [distance, setDistance] = useState(0);
+  const [startAddr, setStartAddr] = useState('Locating…');
+  const [gpsError, setGpsError]   = useState('');
+
+  const fmtTime = s => {
+    const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+    return h>0 ? `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
+               : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  };
+
+  const updatePosition = (lat, lon) => {
+    const newPt = [lat, lon];
+    const map = mapObj.current;
+    if (map) {
+      map.setView(newPt, 16);
+      if (markerRef.current) {
+        markerRef.current.setLatLng(newPt);
+      } else {
+        const icon = L.divIcon({
+          html:`<div style="width:16px;height:16px;border-radius:50%;background:${accent};border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.4)"></div>`,
+          className:'', iconSize:[16,16], iconAnchor:[8,8]
+        });
+        markerRef.current = L.marker(newPt, {icon}).addTo(map);
+      }
+    }
+    const prev = coordsRef.current;
+    if (prev.length > 0) {
+      const last = prev[prev.length-1];
+      const d = haversine(last[0], last[1], lat, lon);
+      if (d < 5) setDistance(x => x + d); // ignore GPS jumps > 5 mi
+    }
+    coordsRef.current = [...prev, newPt];
+    if (map && coordsRef.current.length > 1) {
+      if (polyRef.current) polyRef.current.setLatLngs(coordsRef.current);
+      else polyRef.current = L.polyline(coordsRef.current, {color:accent, weight:5, opacity:0.9}).addTo(map);
+    }
+  };
+
+  const startTimer = () => {
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setSeconds(s=>s+1), 1000);
+  };
+
+  const startWatch = () => {
+    if (!navigator.geolocation) { setGpsError('GPS not available'); return; }
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      pos => updatePosition(pos.coords.latitude, pos.coords.longitude),
+      () => {},
+      { enableHighAccuracy:true, maximumAge:2000 }
+    );
+  };
+
+  useEffect(() => {
+    // Init Leaflet map
+    if (mapDiv.current && !mapObj.current) {
+      const map = L.map(mapDiv.current, { zoomControl:false, attributionControl:false });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      mapObj.current = map;
+    }
+    // Get first position
+    if (!navigator.geolocation) {
+      setGpsError('Enable location to track GPS'); setStatus('tracking'); startTimer(); return;
+    }
+    navigator.geolocation.getCurrentPosition(pos => {
+      const {latitude:lat, longitude:lon} = pos.coords;
+      updatePosition(lat, lon);
+      setStatus('tracking');
+      startTimer();
+      startWatch();
+      // Reverse geocode start
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+        {headers:{'Accept-Language':'en'}})
+        .then(r=>r.json()).then(d=>{
+          const a=d.address||{};
+          const parts=[a.house_number&&a.road?`${a.house_number} ${a.road}`:a.road,
+            a.city||a.town||a.village||a.suburb, a.state].filter(Boolean);
+          setStartAddr(parts.join(', ')||`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+        }).catch(()=>setStartAddr(`${lat.toFixed(4)}, ${lon.toFixed(4)}`));
+    }, () => {
+      setGpsError('Could not get location. Tracking time only.');
+      setStatus('tracking'); startTimer();
+    }, {enableHighAccuracy:true, timeout:10000});
+
+    return () => {
+      clearInterval(timerRef.current);
+      if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
+    };
+  }, []);
+
+  const handlePauseResume = () => {
+    if (status === 'tracking') {
+      clearInterval(timerRef.current);
+      if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
+      setStatus('paused');
+    } else {
+      startTimer(); startWatch(); setStatus('tracking');
+    }
+  };
+
+  const handleStop = () => {
+    clearInterval(timerRef.current);
+    if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
+    onTripEnd({ coords: coordsRef.current, distance, seconds, startAddr });
+  };
+
+  return (
+    <div style={{ position:'absolute', inset:0, overflow:'hidden', background:'#1a1a1a', zIndex:50 }}>
+      {/* Map fills entire screen */}
+      <div ref={mapDiv} style={{ position:'absolute', inset:0 }}/>
+
+      {/* Top overlay */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, zIndex:500,
+        background:'linear-gradient(to bottom, rgba(0,0,0,0.78) 0%, transparent 100%)',
+        padding:'14px 16px 32px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+          <button onClick={onCancel} style={{
+            background:'rgba(255,255,255,0.18)', border:'none', borderRadius:20,
+            padding:'7px 16px', color:'white', fontSize:13, fontWeight:600,
+            cursor:'pointer', backdropFilter:'blur(10px)', fontFamily:'inherit' }}>✕ Cancel</button>
+          <div style={{ background:'rgba(255,255,255,0.15)', backdropFilter:'blur(10px)',
+            borderRadius:20, padding:'5px 14px', display:'flex', alignItems:'center', gap:7 }}>
+            <div className={status==='tracking'?'gps-dot':''} style={{
+              width:9, height:9, borderRadius:'50%',
+              background: status==='tracking'?'#34C759': status==='paused'?'#FF9500':'#8E8E93' }}/>
+            <span style={{ color:'white', fontSize:12, fontWeight:700, letterSpacing:0.5 }}>
+              {status==='starting'?'Getting GPS…':status==='paused'?'PAUSED':'TRACKING'}
+            </span>
+          </div>
+        </div>
+        {/* Stats */}
+        <div style={{ display:'flex', justifyContent:'center', gap:0 }}>
+          <div style={{ textAlign:'center', padding:'0 28px',
+            borderRight:'1px solid rgba(255,255,255,0.25)' }}>
+            <div style={{ fontSize:40, fontWeight:800, color:'white', lineHeight:1,
+              fontVariantNumeric:'tabular-nums' }}>{fmtTime(seconds)}</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', marginTop:3, letterSpacing:1 }}>DURATION</div>
+          </div>
+          <div style={{ textAlign:'center', padding:'0 28px' }}>
+            <div style={{ fontSize:40, fontWeight:800, color:'white', lineHeight:1 }}>{distance.toFixed(2)}</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', marginTop:3, letterSpacing:1 }}>MILES</div>
+          </div>
+        </div>
+        {gpsError && <div style={{ textAlign:'center', color:'#FF9500', fontSize:12, marginTop:10 }}>{gpsError}</div>}
+        {startAddr !== 'Locating…' && (
+          <div style={{ textAlign:'center', color:'rgba(255,255,255,0.6)', fontSize:11, marginTop:8,
+            overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', padding:'0 20px' }}>
+            📍 {startAddr}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom controls */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, zIndex:500,
+        background:'linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%)',
+        padding:'16px 20px 44px', display:'flex', alignItems:'center', justifyContent:'center', gap:32 }}>
+        <button onClick={handlePauseResume} style={{
+          width:64, height:64, borderRadius:'50%',
+          background:'rgba(255,255,255,0.18)', border:'2px solid rgba(255,255,255,0.4)',
+          cursor:'pointer', backdropFilter:'blur(10px)',
+          display:'flex', alignItems:'center', justifyContent:'center' }}>
+          {status==='paused'
+            ? <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            : <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>}
+        </button>
+        <button onClick={handleStop} style={{
+          width:82, height:82, borderRadius:'50%', background:'#FF3B30',
+          border:'3px solid rgba(255,255,255,0.35)', cursor:'pointer',
+          boxShadow:'0 4px 24px rgba(255,59,48,0.55)',
+          display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:3 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+          <span style={{ color:'white', fontSize:10, fontWeight:900, letterSpacing:1.5 }}>STOP</span>
+        </button>
+        <div style={{ width:64 }}/>
+      </div>
+    </div>
+  );
+}
+
+// ─── TRIP END SCREEN ────────────────────────────────────────────
+function TripEndScreen({ accent, tripData, onSave, onDiscard }) {
+  const [category, setCategory] = useState('Business');
+  const [purpose,  setPurpose]  = useState('');
+  const [notes,    setNotes]    = useState('');
+  const [endAddr,  setEndAddr]  = useState('');
+
+  useEffect(() => {
+    const coords = tripData.coords || [];
+    if (coords.length === 0) return;
+    const [lat, lon] = coords[coords.length-1];
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+      {headers:{'Accept-Language':'en'}})
+      .then(r=>r.json()).then(d=>{
+        const a=d.address||{};
+        const parts=[a.house_number&&a.road?`${a.house_number} ${a.road}`:a.road,
+          a.city||a.town||a.village||a.suburb, a.state].filter(Boolean);
+        setEndAddr(parts.join(', ')||`${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+      }).catch(()=>{});
+  }, []);
+
+  const fmtDur = s => {
+    const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sec=s%60;
+    return h>0?`${h}h ${m}m`:`${m}m ${sec}s`;
+  };
+
+  const handleSave = () => {
+    onSave({
+      id: Date.now(),
+      date: new Date().toISOString().slice(0,10),
+      from: tripData.startAddr || 'Start',
+      to:   endAddr || 'End',
+      miles: parseFloat((tripData.distance||0).toFixed(2)),
+      category, purpose: purpose.trim() || category + ' trip',
+      entity: '', notes, duration: tripData.seconds, tracked: true,
+    });
+  };
+
+  const CATS = ['Business','Medical','Charity','Moving','Personal'];
+
+  return (
+    <div style={{ position:'absolute', inset:0, background:'#F2F2F7', overflowY:'auto',
+      fontFamily:'Inter,-apple-system,sans-serif', zIndex:50 }}>
+      {/* Header */}
+      <div style={{ background:'linear-gradient(135deg, #34C759 0%, #30D158 100%)',
+        padding:'48px 20px 24px', textAlign:'center' }}>
+        <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(255,255,255,0.2)',
+          display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px' }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div style={{ fontSize:22, fontWeight:800, color:'white', marginBottom:16 }}>Trip Complete!</div>
+        <div style={{ display:'flex', gap:0, justifyContent:'center' }}>
+          <div style={{ textAlign:'center', padding:'0 24px', borderRight:'1px solid rgba(255,255,255,0.3)' }}>
+            <div style={{ fontSize:28, fontWeight:800, color:'white' }}>{(tripData.distance||0).toFixed(2)}</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.7)', letterSpacing:1 }}>MILES</div>
+          </div>
+          <div style={{ textAlign:'center', padding:'0 24px' }}>
+            <div style={{ fontSize:28, fontWeight:800, color:'white' }}>{fmtDur(tripData.seconds||0)}</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.7)', letterSpacing:1 }}>DURATION</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding:'16px 16px 100px' }}>
+        {/* Route */}
+        <div style={{ background:'white', borderRadius:14, padding:'14px 16px',
+          boxShadow:'0 1px 6px rgba(0,0,0,0.06)', marginBottom:12 }}>
+          <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginBottom:10 }}>ROUTE</div>
+          <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', paddingTop:3 }}>
+              <div style={{ width:9, height:9, borderRadius:'50%', background:'#34C759' }}/>
+              <div style={{ width:1, height:26, background:'#E5E5EA', margin:'4px 0' }}/>
+              <div style={{ width:9, height:9, borderRadius:'50%', background:'#FF3B30' }}/>
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:13, color:'#1a1a1a', marginBottom:18,
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {tripData.startAddr||'Start location'}
+              </div>
+              <div style={{ fontSize:13, color:'#1a1a1a',
+                overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {endAddr||'Getting end location…'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Category */}
+        <div style={{ background:'white', borderRadius:14, padding:'14px 16px',
+          boxShadow:'0 1px 6px rgba(0,0,0,0.06)', marginBottom:12 }}>
+          <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginBottom:10 }}>CATEGORY</div>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            {CATS.map(c=>(
+              <button key={c} onClick={()=>setCategory(c)} style={{
+                padding:'7px 16px', borderRadius:20, border:'none', fontFamily:'inherit',
+                background: category===c ? accent : '#F2F2F7',
+                color: category===c ? 'white' : '#3a3a3c',
+                fontSize:13, fontWeight:600, cursor:'pointer' }}>{c}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Purpose + Notes */}
+        <div style={{ background:'white', borderRadius:14, overflow:'hidden',
+          boxShadow:'0 1px 6px rgba(0,0,0,0.06)', marginBottom:16 }}>
+          <div style={{ padding:'14px 16px', borderBottom:'0.5px solid #F0F0F5' }}>
+            <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginBottom:4 }}>PURPOSE</div>
+            <input value={purpose} onChange={e=>setPurpose(e.target.value)}
+              placeholder="e.g. Client meeting, Doctor visit…"
+              style={{ width:'100%', border:'none', outline:'none', fontSize:15,
+                fontFamily:'Inter,sans-serif', color:'#1a1a1a', background:'none', padding:'4px 0' }}/>
+          </div>
+          <div style={{ padding:'14px 16px' }}>
+            <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginBottom:4 }}>COMMENTS</div>
+            <textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3}
+              placeholder="Any notes about this trip…"
+              style={{ width:'100%', border:'none', outline:'none', fontSize:15,
+                fontFamily:'Inter,sans-serif', color:'#1a1a1a', background:'none',
+                resize:'none', padding:'4px 0' }}/>
+          </div>
+        </div>
+
+        <button onClick={handleSave} style={{
+          width:'100%', padding:'16px', borderRadius:14, border:'none',
+          background:accent, color:'white', fontSize:16, fontWeight:700,
+          cursor:'pointer', outline:'none', fontFamily:'inherit',
+          boxShadow:`0 4px 14px ${accent}50`, marginBottom:10 }}>Save Trip</button>
+
+        <button onClick={onDiscard} style={{
+          width:'100%', padding:'14px', borderRadius:14, border:'none',
+          background:'none', color:'#FF3B30', fontSize:14, fontWeight:500,
+          cursor:'pointer', outline:'none', fontFamily:'inherit' }}>Discard Trip</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── ADMIN SCREEN ───────────────────────────────────────────────
 function AdminScreen({ onBack, accent = '#007AFF' }) {
   const [authed, setAuthed] = useState(false);
@@ -3450,7 +3824,10 @@ function App() {
   const saved = JSON.parse(localStorage.getItem('mv_state') || '{}');
   const [user, setUser] = useState(loadUser);
   const [screen, setScreen] = useState(saved.screen || 'home');
-  const [trips, setTrips] = useState(SAMPLE_TRIPS);
+  const [trips, setTrips] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('mv_trips') || '[]'); } catch { return []; }
+  });
+  const [tripEndData, setTripEndData] = useState(null);
   const [archive, setArchive] = useState([]); // {trip, archivedAt}
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [dark, setDark] = useState(false);
@@ -3487,6 +3864,11 @@ function App() {
     localStorage.setItem('mv_state', JSON.stringify({ screen, plan, trialEndsAt, bonusMonths, proUntil }));
   }, [screen, plan, trialEndsAt, bonusMonths, proUntil]);
 
+  // Persist trips to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('mv_trips', JSON.stringify(trips));
+  }, [trips]);
+
   // Auto-purge archive items older than 90 days
   useEffect(() => {
     const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
@@ -3507,10 +3889,12 @@ function App() {
     return () => window.removeEventListener('tweakChange', handler);
   }, [screen]);
 
+  const [showAddChoice, setShowAddChoice] = useState(false);
+
   const handleTab = (tab) => {
     if (tab === 'add') {
       if (!canAddTrip) { setShowPaywall(true); return; }
-      setPrevScreen(screen); setScreen('add'); return;
+      setShowAddChoice(true); return;
     }
     if (tab === 'import') {
       if (!canAddTrip) { setShowPaywall(true); return; }
@@ -3566,16 +3950,32 @@ function App() {
   const SCREEN_TITLES = {
     home: 'MileVault', trips: 'My Trips', add: 'New Trip', import: 'Import Trips',
     reports: 'Reports', benefits: 'Benefits', settings: 'Settings', admin: 'Admin',
+    tracking: 'Tracking', tripEnd: 'Save Trip',
   };
 
   const tabForScreen = ['home','trips','reports','benefits','settings'].includes(screen) ? screen : prevScreen;
 
   const appInner = (
       <div style={{ position: 'relative', height: '100%', overflowY: 'hidden', background: dark ? '#1C1C1E' : '#F2F2F7' }}>
+        {/* Tracking screens — full-bleed, no scroll wrapper */}
+        {screen === 'tracking' && (
+          <TrackingScreen accent={accent}
+            onTripEnd={(data) => { setTripEndData(data); setScreen('tripEnd'); }}
+            onCancel={() => setScreen('home')}/>
+        )}
+        {screen === 'tripEnd' && tripEndData && (
+          <TripEndScreen accent={accent} tripData={tripEndData}
+            onSave={(trip) => { setTrips(prev=>[trip,...prev]); setTripEndData(null); setScreen('trips'); }}
+            onDiscard={() => { setTripEndData(null); setScreen('home'); }}/>
+        )}
+
         {/* Screen renderer */}
         {screen === 'home' && (
           <div style={{ height: '100%', overflowY: 'auto' }}>
-            <HomeScreen trips={trips} accent={accent} onAddTrip={() => handleTab('add')} onTripPress={setSelectedTrip}/>
+            <HomeScreen trips={trips} accent={accent}
+              onAddTrip={() => handleTab('add')}
+              onTripPress={setSelectedTrip}
+              onStartTrip={() => setScreen('tracking')}/>
           </div>
         )}
         {screen === 'trips' && (
@@ -3614,7 +4014,13 @@ function App() {
               onShowPaywall={() => setShowPaywall(true)}
               onShowReferral={() => setShowReferral(true)}
               onShowAdmin={() => setScreen('admin')}
-              onSignOut={() => { localStorage.removeItem('mv_user'); setUser(null); }}/>
+              onSignOut={() => {
+                localStorage.removeItem('mv_user');
+                localStorage.removeItem('mv_trips');
+                localStorage.removeItem('mv_state');
+                setTrips([]);
+                setUser(null);
+              }}/>
           </div>
         )}
         {screen === 'admin' && (
@@ -3626,6 +4032,14 @@ function App() {
           <TripDetail trip={selectedTrip} accent={accent}
             onClose={() => setSelectedTrip(null)}
             onDelete={requestDelete}/>
+        )}
+
+        {/* Add Choice Modal */}
+        {showAddChoice && (
+          <AddChoiceModal accent={accent}
+            onTrack={() => { setShowAddChoice(false); setScreen('tracking'); }}
+            onManual={() => { setShowAddChoice(false); setPrevScreen(screen); setScreen('add'); }}
+            onClose={() => setShowAddChoice(false)}/>
         )}
 
         {/* Delete Confirmation */}
@@ -3662,7 +4076,7 @@ function App() {
 
         {/* Tab bar */}
         {!selectedTrip && (
-          <TabBar active={tabForScreen} onTab={handleTab} accent={accent}/>
+          {!['tracking','tripEnd'].includes(screen) && <TabBar active={tabForScreen} onTab={handleTab} accent={accent}/>}
         )}
       </div>
   );
