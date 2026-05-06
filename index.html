@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>MileVault Pro</title>
 
 <!-- PWA -->
@@ -4028,11 +4031,46 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // SW registration failed (e.g. file:// protocol) — app still works
-    });
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 }
+
+// Babel fallback: if auto-transform didn't fire, manually process script tags
+(function() {
+  function processBabelScripts() {
+    if (typeof Babel === 'undefined' || typeof React === 'undefined') return;
+    var scripts = document.querySelectorAll('script[type="text/babel"]');
+    var allProcessed = true;
+    scripts.forEach(function(s) { if (!s.hasAttribute('data-babel-processed')) allProcessed = false; });
+    if (allProcessed) return; // Babel already handled it
+
+    var compiled = [];
+    for (var i = 0; i < scripts.length; i++) {
+      var s = scripts[i];
+      if (s.hasAttribute('data-babel-processed')) { compiled.push(null); continue; }
+      try {
+        var result = Babel.transform(s.innerHTML, { presets: ['react', 'env'], filename: 'app' + i + '.jsx' });
+        compiled.push(result.code);
+        s.setAttribute('data-babel-processed', 'true');
+      } catch(e) {
+        console.error('MileVault Babel error in script ' + i + ':', e.message);
+        return;
+      }
+    }
+    compiled.forEach(function(code) {
+      if (!code) return;
+      var el = document.createElement('script');
+      el.text = code;
+      document.body.appendChild(el);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', processBabelScripts);
+  } else {
+    processBabelScripts();
+  }
+})();
 </script>
 </body>
 </html>
