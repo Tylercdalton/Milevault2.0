@@ -423,91 +423,10 @@ Object.assign(window, {
   .slide-up-anim { animation: slideUp 0.35s cubic-bezier(0.25,0.46,0.45,0.94) both; }
   .pop-anim { animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
 
-  /* Tweaks panel */
-  #tweaks-panel {
-    display: none;
-    position: fixed; bottom: 20px; right: 20px;
-    background: white; border-radius: 16px;
-    padding: 20px; width: 260px; z-index: 9999;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    font-family: 'Inter', sans-serif;
-  }
-  #tweaks-panel.visible { display: block; animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
-  #tweaks-panel h3 { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: #1a1a1a; }
-  .tweak-row { margin-bottom: 12px; }
-  .tweak-row label { display: block; font-size: 11px; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-  .tweak-row select, .tweak-row input[type=range] { width: 100%; }
-  .tweak-row select { padding: 6px 8px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; background: #f8f8f8; }
-  .tweak-toggle { display: flex; gap: 6px; flex-wrap: wrap; }
-  .tweak-btn { padding: 5px 10px; border-radius: 20px; border: 1.5px solid #e0e0e0; font-size: 11px; font-weight: 600; cursor: pointer; background: white; transition: all 0.15s; }
-  .tweak-btn.active { background: #007AFF; border-color: #007AFF; color: white; }
 </style>
 </head>
 <body>
 <div id="root"></div>
-<div id="tweaks-panel">
-  <h3>⚙ Tweaks</h3>
-  <div class="tweak-row">
-    <label>Active Screen</label>
-    <select id="tw-screen">
-      <option value="home">Home</option>
-      <option value="trips">Trips</option>
-      <option value="add">Add Trip</option>
-      <option value="import">Import Trips</option>
-      <option value="reports">Reports</option>
-      <option value="benefits">Benefits</option>
-      <option value="settings">Settings</option>
-    </select>
-  </div>
-  <div class="tweak-row">
-    <label>Theme</label>
-    <div class="tweak-toggle">
-      <button class="tweak-btn active" data-group="theme" data-val="light" onclick="applyTweak('theme','light',this)">Light</button>
-      <button class="tweak-btn" data-group="theme" data-val="dark" onclick="applyTweak('theme','dark',this)">Dark</button>
-    </div>
-  </div>
-  <div class="tweak-row">
-    <label>Accent Color</label>
-    <div class="tweak-toggle">
-      <button class="tweak-btn active" data-group="accent" data-val="#007AFF" onclick="applyTweak('accent','#007AFF',this)" style="color:#007AFF">Blue</button>
-      <button class="tweak-btn" data-group="accent" data-val="#34C759" onclick="applyTweak('accent','#34C759',this)" style="color:#34C759">Green</button>
-      <button class="tweak-btn" data-group="accent" data-val="#FF6B35" onclick="applyTweak('accent','#FF6B35',this)" style="color:#FF6B35">Orange</button>
-    </div>
-  </div>
-  <div class="tweak-row">
-    <label>Page Background</label>
-    <div class="tweak-toggle">
-      <button class="tweak-btn active" data-group="bg" data-val="dark" onclick="applyTweak('bg','dark',this)">Dark</button>
-      <button class="tweak-btn" data-group="bg" data-val="light" onclick="applyTweak('bg','light',this)">Light</button>
-      <button class="tweak-btn" data-group="bg" data-val="gradient" onclick="applyTweak('bg','gradient',this)">Gradient</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// Tweaks bridge
-let tweakState = { theme: 'light', accent: '#007AFF', bg: 'dark', screen: 'home' };
-function applyTweak(key, val, btn) {
-  if (btn) {
-    document.querySelectorAll(`[data-group="${key}"]`).forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  }
-  tweakState[key] = val;
-  if (key === 'bg') {
-    document.body.style.background = val === 'light' ? '#e8eaf0' : val === 'gradient' ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' : '#1a1a2e';
-  }
-  window.dispatchEvent(new CustomEvent('tweakChange', { detail: tweakState }));
-}
-document.getElementById('tw-screen').addEventListener('change', e => {
-  tweakState.screen = e.target.value;
-  window.dispatchEvent(new CustomEvent('tweakChange', { detail: tweakState }));
-});
-window.addEventListener('message', e => {
-  if (e.data?.type === '__activate_edit_mode') document.getElementById('tweaks-panel').classList.add('visible');
-  if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaks-panel').classList.remove('visible');
-});
-window.parent.postMessage({ type: '__edit_mode_available' }, '*');
-</script>
 
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
@@ -4075,8 +3994,8 @@ function App() {
         )}
 
         {/* Tab bar */}
-        {!selectedTrip && (
-          {!['tracking','tripEnd'].includes(screen) && <TabBar active={tabForScreen} onTab={handleTab} accent={accent}/>}
+        {!selectedTrip && !['tracking','tripEnd'].includes(screen) && (
+          <TabBar active={tabForScreen} onTab={handleTab} accent={accent}/>
         )}
       </div>
   );
