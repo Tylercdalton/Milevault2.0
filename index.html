@@ -3110,7 +3110,14 @@ async function notifyAdmin(name, email, phone) {
 }
 
 const BETA_CODE = 'VAULT2026';
-const loadUser = () => { try { return JSON.parse(localStorage.getItem('mv_user') || 'null'); } catch { return null; } };
+const loadUser = () => {
+  try {
+    const u = JSON.parse(localStorage.getItem('mv_user') || 'null');
+    // Invalidate old accounts missing required fields
+    if (u && (!u.phone || !u.email)) { localStorage.removeItem('mv_user'); return null; }
+    return u;
+  } catch { return null; }
+};
 const saveUser = (u) => localStorage.setItem('mv_user', JSON.stringify(u));
 
 function RegistrationScreen({ onComplete, accent = '#007AFF' }) {
@@ -3195,18 +3202,21 @@ function RegistrationScreen({ onComplete, accent = '#007AFF' }) {
       fontFamily:'Inter, -apple-system, sans-serif' }}>
       <div style={{ background:`linear-gradient(160deg, ${accent} 0%, #5856D6 100%)`,
         padding:'60px 24px 32px', textAlign:'center' }}>
-        <div style={{ fontSize:26, fontWeight:800, color:'white' }}>Welcome back</div>
-        <div style={{ fontSize:14, color:'rgba(255,255,255,0.75)', marginTop:4 }}>Sign in to your account</div>
+        <div style={{ fontSize:26, fontWeight:800, color:'white' }}>Welcome Back</div>
+        <div style={{ fontSize:14, color:'rgba(255,255,255,0.75)', marginTop:4 }}>Enter the email you signed up with</div>
       </div>
       <div style={{ padding:'24px 20px' }}>
-        <div style={{ background:'white', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 8px rgba(0,0,0,0.06)', marginBottom:16 }}>
-          <div style={{ padding:'14px 16px', borderBottom:'0.5px solid #F0F0F5' }}>
-            <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginBottom:4 }}>EMAIL</div>
+        <div style={{ background:'white', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 8px rgba(0,0,0,0.06)', marginBottom:8 }}>
+          <div style={{ padding:'14px 16px' }}>
+            <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginBottom:4 }}>EMAIL ADDRESS</div>
             <input value={form.email} onChange={e=>set('email',e.target.value)}
-              placeholder="your@email.com" type="email"
+              placeholder="your@email.com" type="email" autoFocus
               style={{ width:'100%', border:'none', outline:'none', fontSize:16,
                 fontFamily:'Inter,sans-serif', color:'#1a1a1a', background:'none', padding:'4px 0' }}/>
           </div>
+        </div>
+        <div style={{ fontSize:12, color:'#8E8E93', marginBottom:20, paddingLeft:4 }}>
+          Use the same email you registered with during sign up.
         </div>
         {error && <div style={{ background:'#FFF0EE', borderRadius:10, padding:'10px 14px',
           fontSize:13, color:'#FF3B30', marginBottom:14 }}>{error}</div>}
@@ -3216,10 +3226,18 @@ function RegistrationScreen({ onComplete, accent = '#007AFF' }) {
           cursor:'pointer', outline:'none', fontFamily:'inherit',
           boxShadow:`0 4px 14px ${accent}50`,
         }}>Sign In</button>
+        <div style={{ textAlign:'center', margin:'16px 0 8px', fontSize:13, color:'#8E8E93' }}>
+          Don't have an account?
+        </div>
+        <button onClick={() => { setError(''); setMode('signup'); }} style={{
+          width:'100%', padding:'14px', borderRadius:14, border:`1.5px solid ${accent}`,
+          background:'none', color:accent, fontSize:15, fontWeight:600,
+          cursor:'pointer', outline:'none', fontFamily:'inherit',
+        }}>Create Account</button>
         <button onClick={() => { setError(''); setMode('welcome'); }} style={{
           width:'100%', padding:'14px', borderRadius:14, border:'none',
           background:'none', color:'#8E8E93', fontSize:14, fontWeight:500,
-          cursor:'pointer', outline:'none', marginTop:8, fontFamily:'inherit',
+          cursor:'pointer', outline:'none', marginTop:4, fontFamily:'inherit',
         }}>← Back</button>
       </div>
     </div>
