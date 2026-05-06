@@ -379,6 +379,15 @@ Object.assign(window, {
   ::-webkit-scrollbar { display: none; }
   * { scrollbar-width: none; }
 
+  /* Mobile touch & readability fixes */
+  @media (max-width: 500px) {
+    input, button, select, textarea {
+      font-size: 16px !important; /* prevents iOS zoom on focus */
+      -webkit-tap-highlight-color: transparent;
+    }
+    button { min-height: 44px; }
+  }
+
   @keyframes slideUp {
     from { transform: translateY(100%); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
@@ -687,6 +696,31 @@ function MapPreview({ trip, height = 140, accent = '#007AFF' }) {
   );
 }
 
+
+// ─── GPS LOCATION HELPER ───────────────────────────────────────
+const getCurrentAddress = () => new Promise((resolve, reject) => {
+  if (!navigator.geolocation) return reject('Geolocation not supported');
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    try {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const data = await res.json();
+      const a = data.address || {};
+      const parts = [
+        a.house_number && a.road ? `${a.house_number} ${a.road}` : a.road,
+        a.city || a.town || a.village || a.suburb,
+        a.state,
+      ].filter(Boolean);
+      resolve(parts.join(', ') || `${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+    } catch {
+      resolve(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+    }
+  }, (err) => reject(err.message), { enableHighAccuracy: true, timeout: 10000 });
+});
+
 const SAMPLE_TRIPS = [
   { id:1, date:'2026-04-18', from:'Home Office', to:'TEJ Pharmacy – Austin', miles:12.4, category:'Business', purpose:'Inventory check', entity:'TEJ' },
   { id:2, date:'2026-04-17', from:'Home', to:'St. David\'s Medical Center', miles:8.1, category:'Medical', purpose:'Doctor appointment', entity:'' },
@@ -818,6 +852,67 @@ function CatPill({ cat, small }) {
       borderRadius: 20, fontSize: small ? 10 : 11, fontWeight: 600,
       letterSpacing: 0.2, whiteSpace: 'nowrap',
     }}>{cat}</span>
+  );
+}
+
+
+// ─── SWIPEABLE ROW (swipe left to delete) ──────────────────────
+function SwipeableRow({ onDelete, children }) {
+  const [offsetX, setOffsetX] = useState(0);
+  const [swiping, setSwiping] = useState(false);
+  const startX = useRef(null);
+  const DELETE_THRESHOLD = 80;
+  const MAX_SWIPE = 90;
+
+  const onTouchStart = (e) => {
+    startX.current = e.touches[0].clientX;
+    setSwiping(false);
+  };
+  const onTouchMove = (e) => {
+    if (startX.current === null) return;
+    const dx = startX.current - e.touches[0].clientX;
+    if (dx > 0) {
+      setSwiping(true);
+      setOffsetX(Math.min(dx, MAX_SWIPE));
+    }
+  };
+  const onTouchEnd = () => {
+    if (offsetX < DELETE_THRESHOLD) {
+      setOffsetX(0);
+    } else {
+      setOffsetX(MAX_SWIPE);
+    }
+    startX.current = null;
+  };
+  const reset = () => setOffsetX(0);
+
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Red delete button revealed on swipe */}
+      <div style={{
+        position: 'absolute', right: 0, top: 0, bottom: 0,
+        width: MAX_SWIPE, background: '#FF3B30',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'pointer',
+      }} onClick={() => { reset(); onDelete(); }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <Icon name="trash" size={20} color="white" strokeWidth={2}/>
+          <span style={{ fontSize: 11, color: 'white', fontWeight: 700 }}>Delete</span>
+        </div>
+      </div>
+      {/* Row content — slides left */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          transform: `translateX(-${offsetX}px)`,
+          transition: swiping ? 'none' : 'transform 0.25s ease',
+          position: 'relative', zIndex: 1, background: 'white',
+        }}>
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -995,7 +1090,7 @@ function HomeScreen({ trips, accent, onAddTrip, onTripPress }) {
 }
 
 // ─── TRIPS SCREEN ───────────────────────────────────────────────
-function TripsScreen({ trips, accent, onTripPress, onAddTrip, onImport }) {
+function TripsScreen({ trips, accent, onTripPress, onAddTrip, onImport, onDeleteTrip }) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('All');
   const cats = ['All','Business','Medical','Charity','Moving','Personal'];
@@ -1056,7 +1151,9 @@ function TripsScreen({ trips, accent, onTripPress, onAddTrip, onImport }) {
               <div style={{ marginTop: 8, fontSize: 14 }}>No trips found</div>
             </div>
           ) : filtered.map(trip => (
-            <TripRow key={trip.id} trip={trip} accent={accent} onPress={() => onTripPress(trip)}/>
+            <SwipeableRow key={trip.id} onDelete={() => onDeleteTrip && onDeleteTrip(trip.id)}>
+              <TripRow trip={trip} accent={accent} onPress={() => onTripPress(trip)}/>
+            </SwipeableRow>
           ))}
         </div>
         <div style={{ textAlign: 'center', fontSize: 12, color: '#8E8E93', marginTop: 12 }}>
@@ -1079,7 +1176,21 @@ function AddTripScreen({ accent, onSave, onClose, allTrips = [] }) {
   });
   const [saved, setSaved] = useState(false);
   const [aiDismissed, setAiDismissed] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsField, setGpsField] = useState(null); // 'from' | 'to'
   const fileRef = useRef(null);
+
+  const handleGPS = async (field) => {
+    setGpsLoading(true); setGpsField(field);
+    try {
+      const addr = await getCurrentAddress();
+      set(field, addr);
+    } catch (e) {
+      alert('Could not get location: ' + e + '\nMake sure location is enabled for your browser.');
+    } finally {
+      setGpsLoading(false); setGpsField(null);
+    }
+  };
 
   const set = (k,v) => setForm(f => ({...f,[k]:v}));
   const ded = parseFloat(form.miles) ? deduction(parseFloat(form.miles), form.category) : 0;
@@ -1152,6 +1263,11 @@ function AddTripScreen({ accent, onSave, onClose, allTrips = [] }) {
                 placeholder="Start location"
                 style={{ flex: 1, padding: '14px 0', border: 'none', outline: 'none',
                   fontSize: 15, fontFamily: 'Inter, sans-serif', color: '#1a1a1a', background: 'none' }}/>
+              <button onClick={() => handleGPS('from')} disabled={gpsLoading && gpsField==='from'}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px',
+                  color: accent, fontSize: 11, fontWeight: 700, flexShrink: 0, outline: 'none' }}>
+                {gpsLoading && gpsField==='from' ? '…' : '📍 Now'}
+              </button>
             </div>
             {/* Dashed connector */}
             <div style={{ height: 24, display: 'flex', alignItems: 'center', paddingLeft: 29 }}>
@@ -1166,6 +1282,11 @@ function AddTripScreen({ accent, onSave, onClose, allTrips = [] }) {
                 placeholder="End location"
                 style={{ flex: 1, padding: '14px 0', border: 'none', outline: 'none',
                   fontSize: 15, fontFamily: 'Inter, sans-serif', color: '#1a1a1a', background: 'none' }}/>
+              <button onClick={() => handleGPS('to')} disabled={gpsLoading && gpsField==='to'}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px',
+                  color: accent, fontSize: 11, fontWeight: 700, flexShrink: 0, outline: 'none' }}>
+                {gpsLoading && gpsField==='to' ? '…' : '📍 Now'}
+              </button>
             </div>
           </div>
 
@@ -2916,9 +3037,188 @@ function ArchiveModal({ accent, archive, onClose, onRestore, onPurge }) {
   );
 }
 
+
+// ─── REGISTRATION / LOGIN SCREEN ───────────────────────────────
+const BETA_CODE = 'VAULT2026';
+const loadUser = () => { try { return JSON.parse(localStorage.getItem('mv_user') || 'null'); } catch { return null; } };
+const saveUser = (u) => localStorage.setItem('mv_user', JSON.stringify(u));
+
+function RegistrationScreen({ onComplete, accent = '#007AFF' }) {
+  const [mode, setMode] = useState('welcome'); // welcome | signup | login | approved
+  const [form, setForm] = useState({ name: '', email: '', code: '', agree: false });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const set = (k, v) => setForm(f => ({...f, [k]: v}));
+
+  const handleSignup = () => {
+    if (!form.name.trim()) return setError('Please enter your name');
+    if (!form.email.trim() || !form.email.includes('@')) return setError('Please enter a valid email');
+    if (form.code.trim().toUpperCase() !== BETA_CODE) return setError('Invalid beta access code. Contact Tyler for access.');
+    if (!form.agree) return setError('Please agree to the terms to continue');
+    setError('');
+    setLoading(true);
+    setTimeout(() => {
+      saveUser({ name: form.name.trim(), email: form.email.trim(), joinedAt: Date.now() });
+      setMode('approved');
+      setTimeout(() => onComplete(), 1800);
+    }, 1000);
+  };
+
+  const handleLogin = () => {
+    const user = loadUser();
+    if (!user) return setError('No account found. Please sign up first.');
+    onComplete();
+  };
+
+  if (mode === 'approved') return (
+    <div style={{ position:'fixed', inset:0, background:`linear-gradient(135deg, ${accent} 0%, #5856D6 100%)`,
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      fontFamily:'Inter, -apple-system, sans-serif' }}>
+      <div style={{ width:80, height:80, borderRadius:'50%', background:'rgba(255,255,255,0.2)',
+        display:'flex', alignItems:'center', justifyContent:'center', marginBottom:20 }} className="pop-anim">
+        <Icon name="check" size={40} color="white" strokeWidth={3}/>
+      </div>
+      <div style={{ fontSize:24, fontWeight:800, color:'white', marginBottom:8 }}>You're in!</div>
+      <div style={{ fontSize:14, color:'rgba(255,255,255,0.8)' }}>Welcome to MileVault Beta</div>
+    </div>
+  );
+
+  if (mode === 'welcome') return (
+    <div style={{ position:'fixed', inset:0, background:`linear-gradient(160deg, ${accent} 0%, #5856D6 100%)`,
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      padding:'40px 24px', fontFamily:'Inter, -apple-system, sans-serif' }}>
+      {/* Logo */}
+      <div style={{ width:80, height:80, borderRadius:24, background:'rgba(255,255,255,0.2)',
+        display:'flex', alignItems:'center', justifyContent:'center', marginBottom:24, flexShrink:0 }}>
+        <Icon name="car" size={40} color="white" strokeWidth={2}/>
+      </div>
+      <div style={{ fontSize:32, fontWeight:800, color:'white', marginBottom:8, textAlign:'center' }}>MileVault Pro</div>
+      <div style={{ fontSize:15, color:'rgba(255,255,255,0.8)', marginBottom:48, textAlign:'center', lineHeight:1.5 }}>
+        Track every mile. Maximize every deduction.
+      </div>
+      <button onClick={() => setMode('signup')} style={{
+        width:'100%', maxWidth:360, padding:'16px', borderRadius:14, border:'none',
+        background:'white', color:accent, fontSize:16, fontWeight:800,
+        cursor:'pointer', outline:'none', marginBottom:12, fontFamily:'inherit',
+        boxShadow:'0 8px 24px rgba(0,0,0,0.15)',
+      }}>Join Beta →</button>
+      <button onClick={() => setMode('login')} style={{
+        width:'100%', maxWidth:360, padding:'16px', borderRadius:14, border:'1.5px solid rgba(255,255,255,0.4)',
+        background:'transparent', color:'white', fontSize:16, fontWeight:600,
+        cursor:'pointer', outline:'none', fontFamily:'inherit',
+      }}>Sign In</button>
+      <div style={{ marginTop:32, fontSize:11, color:'rgba(255,255,255,0.5)', textAlign:'center' }}>
+        Beta v2.0 · By invitation only
+      </div>
+    </div>
+  );
+
+  if (mode === 'login') return (
+    <div style={{ position:'fixed', inset:0, background:'#F2F2F7', overflowY:'auto',
+      fontFamily:'Inter, -apple-system, sans-serif' }}>
+      <div style={{ background:`linear-gradient(160deg, ${accent} 0%, #5856D6 100%)`,
+        padding:'60px 24px 32px', textAlign:'center' }}>
+        <div style={{ fontSize:26, fontWeight:800, color:'white' }}>Welcome back</div>
+        <div style={{ fontSize:14, color:'rgba(255,255,255,0.75)', marginTop:4 }}>Sign in to your account</div>
+      </div>
+      <div style={{ padding:'24px 20px' }}>
+        <div style={{ background:'white', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 8px rgba(0,0,0,0.06)', marginBottom:16 }}>
+          <div style={{ padding:'14px 16px', borderBottom:'0.5px solid #F0F0F5' }}>
+            <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginBottom:4 }}>EMAIL</div>
+            <input value={form.email} onChange={e=>set('email',e.target.value)}
+              placeholder="your@email.com" type="email"
+              style={{ width:'100%', border:'none', outline:'none', fontSize:16,
+                fontFamily:'Inter,sans-serif', color:'#1a1a1a', background:'none', padding:'4px 0' }}/>
+          </div>
+        </div>
+        {error && <div style={{ background:'#FFF0EE', borderRadius:10, padding:'10px 14px',
+          fontSize:13, color:'#FF3B30', marginBottom:14 }}>{error}</div>}
+        <button onClick={handleLogin} style={{
+          width:'100%', padding:'16px', borderRadius:14, border:'none',
+          background:accent, color:'white', fontSize:16, fontWeight:700,
+          cursor:'pointer', outline:'none', fontFamily:'inherit',
+          boxShadow:`0 4px 14px ${accent}50`,
+        }}>Sign In</button>
+        <button onClick={() => { setError(''); setMode('welcome'); }} style={{
+          width:'100%', padding:'14px', borderRadius:14, border:'none',
+          background:'none', color:'#8E8E93', fontSize:14, fontWeight:500,
+          cursor:'pointer', outline:'none', marginTop:8, fontFamily:'inherit',
+        }}>← Back</button>
+      </div>
+    </div>
+  );
+
+  // signup mode
+  return (
+    <div style={{ position:'fixed', inset:0, background:'#F2F2F7', overflowY:'auto',
+      fontFamily:'Inter, -apple-system, sans-serif' }}>
+      <div style={{ background:`linear-gradient(160deg, ${accent} 0%, #5856D6 100%)`,
+        padding:'60px 24px 32px', textAlign:'center' }}>
+        <div style={{ fontSize:26, fontWeight:800, color:'white' }}>Create Account</div>
+        <div style={{ fontSize:14, color:'rgba(255,255,255,0.75)', marginTop:4 }}>Beta access required</div>
+      </div>
+      <div style={{ padding:'24px 20px' }}>
+        <div style={{ background:'white', borderRadius:16, overflow:'hidden',
+          boxShadow:'0 1px 8px rgba(0,0,0,0.06)', marginBottom:16 }}>
+          {[
+            ['name','FULL NAME','text','Your name'],
+            ['email','EMAIL','email','your@email.com'],
+          ].map(([k,label,type,ph]) => (
+            <div key={k} style={{ padding:'14px 16px', borderBottom:'0.5px solid #F0F0F5' }}>
+              <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginBottom:4 }}>{label}</div>
+              <input value={form[k]} onChange={e=>set(k,e.target.value)}
+                placeholder={ph} type={type}
+                style={{ width:'100%', border:'none', outline:'none', fontSize:16,
+                  fontFamily:'Inter,sans-serif', color:'#1a1a1a', background:'none', padding:'4px 0' }}/>
+            </div>
+          ))}
+          <div style={{ padding:'14px 16px' }}>
+            <div style={{ fontSize:11, color:'#8E8E93', fontWeight:600, marginBottom:4 }}>BETA ACCESS CODE</div>
+            <input value={form.code} onChange={e=>set('code',e.target.value.toUpperCase())}
+              placeholder="Enter code from Tyler"
+              style={{ width:'100%', border:'none', outline:'none', fontSize:16,
+                fontFamily:'Inter,sans-serif', color:'#1a1a1a', background:'none', padding:'4px 0',
+                letterSpacing:2, fontWeight:700 }}/>
+          </div>
+        </div>
+
+        <div style={{ background:'white', borderRadius:16, padding:'14px 16px',
+          boxShadow:'0 1px 8px rgba(0,0,0,0.06)', marginBottom:16,
+          display:'flex', alignItems:'flex-start', gap:12 }}
+          onClick={() => set('agree', !form.agree)}>
+          <div style={{ width:24, height:24, borderRadius:6, border:`2px solid ${form.agree ? accent : '#C7C7CC'}`,
+            background: form.agree ? accent : 'white', flexShrink:0, marginTop:1,
+            display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+            {form.agree && <Icon name="check" size={14} color="white" strokeWidth={3}/>}
+          </div>
+          <div style={{ fontSize:13, color:'#3a3a3c', lineHeight:1.5, cursor:'pointer' }}>
+            I agree to the <span style={{color:accent, fontWeight:600}}>Terms of Use</span> and confirm this is a beta version for testing purposes.
+          </div>
+        </div>
+
+        {error && <div style={{ background:'#FFF0EE', borderRadius:10, padding:'10px 14px',
+          fontSize:13, color:'#FF3B30', marginBottom:14 }}>{error}</div>}
+
+        <button onClick={handleSignup} disabled={loading}
+          style={{ width:'100%', padding:'16px', borderRadius:14, border:'none',
+            background: loading ? '#C7C7CC' : accent, color:'white', fontSize:16, fontWeight:700,
+            cursor: loading ? 'not-allowed' : 'pointer', outline:'none', fontFamily:'inherit',
+            boxShadow: loading ? 'none' : `0 4px 14px ${accent}50`,
+          }}>{loading ? 'Creating account…' : 'Join Beta'}</button>
+        <button onClick={() => { setError(''); setMode('welcome'); }} style={{
+          width:'100%', padding:'14px', borderRadius:14, border:'none',
+          background:'none', color:'#8E8E93', fontSize:14, fontWeight:500,
+          cursor:'pointer', outline:'none', marginTop:8, fontFamily:'inherit',
+        }}>← Back</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── MAIN APP ───────────────────────────────────────────────────
 function App() {
   const saved = JSON.parse(localStorage.getItem('mv_state') || '{}');
+  const [user, setUser] = useState(loadUser);
   const [screen, setScreen] = useState(saved.screen || 'home');
   const [trips, setTrips] = useState(SAMPLE_TRIPS);
   const [archive, setArchive] = useState([]); // {trip, archivedAt}
@@ -3050,7 +3350,7 @@ function App() {
         )}
         {screen === 'trips' && (
           <div style={{ height: '100%', overflowY: 'auto' }}>
-            <TripsScreen trips={trips} accent={accent} onTripPress={setSelectedTrip} onAddTrip={() => handleTab('add')} onImport={() => handleTab('import')}/>
+            <TripsScreen trips={trips} accent={accent} onTripPress={setSelectedTrip} onAddTrip={() => handleTab('add')} onImport={() => handleTab('import')} onDeleteTrip={requestDelete}/>
           </div>
         )}
         {screen === 'add' && (
@@ -3130,6 +3430,9 @@ function App() {
         )}
       </div>
   );
+  if (!user) {
+    return <RegistrationScreen accent={accent} onComplete={() => setUser(loadUser())}/>;
+  }
   if (isMobile) {
     return (
       <div style={{
