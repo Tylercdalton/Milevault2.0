@@ -3045,7 +3045,7 @@ const saveUser = (u) => localStorage.setItem('mv_user', JSON.stringify(u));
 
 function RegistrationScreen({ onComplete, accent = '#007AFF' }) {
   const [mode, setMode] = useState('welcome'); // welcome | signup | login | approved
-  const [form, setForm] = useState({ name: '', email: '', code: '', agree: false });
+  const [form, setForm] = useState({ name: 'Tyler Dalton', email: 'tdalton508@gmail.com', code: '', agree: false });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const set = (k, v) => setForm(f => ({...f, [k]: v}));
