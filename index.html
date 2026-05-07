@@ -220,6 +220,62 @@ function IOSList({ header, children, dark = false }) {
   );
 }
 
+// ─── iOS INSTALL PROMPT ─────────────────────────────────────────
+function IOSInstallPrompt() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed = localStorage.getItem('mv_install_dismissed');
+  const [show, setShow] = useState(isIOS && !isStandalone && !dismissed);
+
+  if (!show) return null;
+
+  const dismiss = () => {
+    localStorage.setItem('mv_install_dismissed', '1');
+    setShow(false);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999,
+      padding: '0 12px 12px',
+      background: 'transparent',
+      pointerEvents: 'none',
+    }}>
+      <div style={{
+        background: 'rgba(30,30,32,0.96)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderRadius: 20,
+        padding: '16px 16px 14px',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.45)',
+        pointerEvents: 'auto',
+        position: 'relative',
+      }}>
+        <button onClick={dismiss} style={{
+          position: 'absolute', top: 10, right: 12,
+          background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: '50%',
+          width: 24, height: 24, cursor: 'pointer', outline: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 14,
+        }}>✕</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+          <img src="/icon-192.png" style={{ width: 44, height: 44, borderRadius: 10 }} alt="MileVault"/>
+          <div>
+            <div style={{ color: 'white', fontSize: 15, fontWeight: 700, lineHeight: 1.2 }}>Install MileVault Pro</div>
+            <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12, marginTop: 2 }}>Add to Home Screen for the full experience</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 12px' }}>
+          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 1.5 }}>
+            Tap <span style={{ display:'inline-flex', alignItems:'center', verticalAlign:'middle', margin:'0 4px' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </span> then <b style={{ color: 'white' }}>"Add to Home Screen"</b>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
 // Device frame
 // ─────────────────────────────────────────────────────────────
@@ -930,7 +986,7 @@ function TripRow({ trip, accent, onPress }) {
 }
 
 // ─── HOME SCREEN ────────────────────────────────────────────────
-function HomeScreen({ trips, accent, onAddTrip, onTripPress, onStartTrip }) {
+function HomeScreen({ trips, accent, onAddTrip, onTripPress, onStartTrip, onViewAll, onDeleteTrip }) {
   const now = new Date();
   const monthLabel = now.toLocaleString('default', { month: 'long' }) + ' ' + now.getFullYear();
   const totalMiles = trips.reduce((s,t)=>s+t.miles,0);
@@ -995,6 +1051,36 @@ function HomeScreen({ trips, accent, onAddTrip, onTripPress, onStartTrip }) {
         </div>
       </div>
 
+      {/* ── TRACK A NEW TRIP ── */}
+      <div style={{ padding:'16px 16px 0' }}>
+        <div style={{ background:'white', borderRadius:16, padding:'14px 16px', boxShadow:'0 1px 6px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize:12, fontWeight:700, color:'#6B6B6B', textTransform:'uppercase', letterSpacing:0.6, marginBottom:12 }}>Track a Trip</div>
+          <div style={{ display:'flex', gap:10 }}>
+            <button onClick={onStartTrip} style={{
+              flex:1, padding:'14px 10px', borderRadius:14, border:'none', cursor:'pointer', outline:'none', fontFamily:'inherit',
+              background:`linear-gradient(145deg, ${accent} 0%, #34C759 100%)`,
+              boxShadow:`0 4px 14px ${accent}33`,
+              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:7,
+            }}
+              onTouchStart={e=>e.currentTarget.style.opacity='0.85'}
+              onTouchEnd={e=>e.currentTarget.style.opacity='1'}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span style={{ color:'white', fontSize:12, fontWeight:700, letterSpacing:0.2 }}>Auto-Track</span>
+            </button>
+            <button onClick={onAddTrip} style={{
+              flex:1, padding:'14px 10px', borderRadius:14, cursor:'pointer', outline:'none', fontFamily:'inherit',
+              border:`1.5px solid ${accent}30`, background:'white',
+              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:7,
+            }}
+              onTouchStart={e=>e.currentTarget.style.background='#F5F5F7'}
+              onTouchEnd={e=>e.currentTarget.style.background='white'}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 9.5-9.5z"/></svg>
+              <span style={{ color:accent, fontSize:12, fontWeight:700, letterSpacing:0.2 }}>Log Manually</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* ── BY CATEGORY ── */}
       {catEntries.length > 0 && (
         <div style={{ padding:'16px 16px 0' }}>
@@ -1006,26 +1092,23 @@ function HomeScreen({ trips, accent, onAddTrip, onTripPress, onStartTrip }) {
               const c = CAT_COLORS[cat];
               const pct = totalMiles > 0 ? Math.round((data.miles/totalMiles)*100) : 0;
               return (
-                <div key={cat} style={{ padding:'14px 16px', borderBottom: idx < catEntries.length-1 ? '0.5px solid #F0F0F5' : 'none' }}>
+                <div key={cat} style={{ padding:'13px 16px', borderBottom: idx < catEntries.length-1 ? '0.5px solid #F0F0F5' : 'none' }}>
                   <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-                    <div style={{ width:40, height:40, borderRadius:12, background:c.light,
+                    <div style={{ width:38, height:38, borderRadius:10, background:c.light,
                       display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      <Icon name="car" size={20} color={c.text}/>
+                      <Icon name="car" size={18} color={c.text}/>
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:2 }}>
-                        <span style={{ fontSize:18, fontWeight:800, color:'#1a1a1a' }}>{fmt$(data.ded)}</span>
-                        <span style={{ fontSize:14, fontWeight:700, color:'#8E8E93' }}>{fmtMi(data.miles)}</span>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:2 }}>
+                        <span style={{ fontSize:16, fontWeight:800, color:'#1a1a1a' }}>{fmt$(data.ded)}</span>
+                        <span style={{ fontSize:13, fontWeight:600, color:'#8E8E93' }}>{fmtMi(data.miles)}</span>
                       </div>
-                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                        <span style={{ fontSize:13, color:'#8E8E93' }}>{cat}</span>
-                        <span style={{ fontSize:12, color:'#8E8E93' }}>Mileage</span>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:5 }}>
+                        <span style={{ fontSize:12, color:'#8E8E93' }}>{cat}</span>
+                        <span style={{ fontSize:11, color:c.text, fontWeight:600 }}>{pct}%</span>
                       </div>
-                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <div style={{ flex:1, height:4, background:'#F2F2F7', borderRadius:2, overflow:'hidden' }}>
-                          <div style={{ width:`${pct}%`, height:'100%', background:c.bg, borderRadius:2 }}/>
-                        </div>
-                        <span style={{ fontSize:11, color:c.text, fontWeight:600, flexShrink:0 }}>{pct}% of total</span>
+                      <div style={{ height:3, background:'#F2F2F7', borderRadius:2, overflow:'hidden' }}>
+                        <div style={{ width:`${pct}%`, height:'100%', background:c.bg, borderRadius:2 }}/>
                       </div>
                     </div>
                   </div>
@@ -1036,7 +1119,17 @@ function HomeScreen({ trips, accent, onAddTrip, onTripPress, onStartTrip }) {
         </div>
       )}
 
-      {/* ── TRACK A NEW TRIP ── */}
+      {/* placeholder so track card still shows when no trips */}
+      {catEntries.length === 0 && (
+        <div style={{ margin:'0 16px', background:'white', borderRadius:16,
+          padding:'28px 20px', textAlign:'center', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
+          <Icon name="map" size={32} color="#C7C7CC"/>
+          <div style={{ fontSize:14, fontWeight:700, color:'#3a3a3c', marginTop:10, marginBottom:4 }}>No trips yet</div>
+          <div style={{ fontSize:12, color:'#8E8E93', lineHeight:1.5 }}>Tap Auto-Track above to log your first GPS trip.</div>
+        </div>
+      )}
+
+      {/* ── removed old standalone track card — buttons above replace it ──
       <div style={{ padding:'16px 16px 0' }}>
         <div style={{ background:'white', borderRadius:16, padding:'16px', boxShadow:'0 1px 6px rgba(0,0,0,0.06)',
           display:'flex', alignItems:'center', gap:14 }}>
@@ -1059,47 +1152,23 @@ function HomeScreen({ trips, accent, onAddTrip, onTripPress, onStartTrip }) {
                 background:accent, color:'white', fontSize:12, fontWeight:700, outline:'none', fontFamily:'inherit',
                 display:'flex', alignItems:'center', justifyContent:'center', gap:4, whiteSpace:'nowrap',
               }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                Auto-Track
-              </button>
-              <button onClick={onAddTrip} style={{
-                flex:1, padding:'10px 6px', borderRadius:10, border:`1.5px solid ${accent}44`, cursor:'pointer',
-                background:'white', color:accent, fontSize:12, fontWeight:700, outline:'none', fontFamily:'inherit',
-                display:'flex', alignItems:'center', justifyContent:'center', gap:4, whiteSpace:'nowrap',
-              }}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 9.5-9.5z"/></svg>
-                Log Manually
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* ── RECENT TRIPS ── */}
       {trips.length > 0 && (
         <div style={{ padding:'16px 16px 0' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
             <span style={{ fontSize:12, fontWeight:700, color:'#6B6B6B', textTransform:'uppercase', letterSpacing:0.6 }}>Recent Trips</span>
-            <button onClick={onAddTrip} style={{ background:'none', border:'none', color:accent, fontSize:13, fontWeight:600, cursor:'pointer', outline:'none', fontFamily:'inherit' }}>View all</button>
+            <button onClick={onViewAll} style={{ background:'none', border:'none', color:accent, fontSize:13, fontWeight:600, cursor:'pointer', outline:'none', fontFamily:'inherit' }}>View all</button>
           </div>
           <div style={{ background:'white', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 6px rgba(0,0,0,0.06)' }}>
             {trips.slice(0,4).map(trip => (
-              <TripRow key={trip.id} trip={trip} accent={accent} onPress={() => onTripPress(trip)}/>
+              <SwipeableRow key={trip.id} onDelete={() => onDeleteTrip && onDeleteTrip(trip.id)}>
+                <TripRow trip={trip} accent={accent} onPress={() => onTripPress(trip)}/>
+              </SwipeableRow>
             ))}
           </div>
         </div>
       )}
 
-      {trips.length === 0 && (
-        <div style={{ margin:'16px 16px 0', background:'white', borderRadius:16,
-          padding:'32px 20px', textAlign:'center', boxShadow:'0 1px 4px rgba(0,0,0,0.06)' }}>
-          <Icon name="map" size={36} color="#C7C7CC"/>
-          <div style={{ fontSize:15, fontWeight:700, color:'#3a3a3c', marginTop:12, marginBottom:6 }}>No trips yet</div>
-          <div style={{ fontSize:13, color:'#8E8E93', lineHeight:1.5 }}>
-            Tap Start Auto-Track to log your first GPS trip, or Log Manually to enter details directly.
-          </div>
-        </div>
-      )}
 
       {/* IRS rate banner */}
       <div style={{ margin:'16px 16px 0' }}>
@@ -4520,8 +4589,10 @@ function App() {
           <div style={{ height: '100%', overflowY: 'auto' }}>
             <HomeScreen trips={trips} accent={accent}
               onAddTrip={() => handleTab('add')}
+              onViewAll={() => setScreen('trips')}
               onTripPress={setSelectedTrip}
-              onStartTrip={() => setScreen('tracking')}/>
+              onStartTrip={() => setScreen('tracking')}
+              onDeleteTrip={requestDelete}/>
           </div>
         )}
         {screen === 'trips' && (
@@ -4649,6 +4720,7 @@ function App() {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {appInner}
+        <IOSInstallPrompt/>
       </div>
     );
   }
