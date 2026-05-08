@@ -17,10 +17,19 @@
 <meta name="apple-mobile-web-app-title" content="MileVault">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23007AFF'/%3E%3Cpath d='M20 65 L25 45 Q27 38 35 38 L65 38 Q73 38 75 45 L80 65 Q82 68 80 70 L76 70 L76 74 Q76 77 73 77 L68 77 Q65 77 65 74 L65 70 L35 70 L35 74 Q35 77 32 77 L27 77 Q24 77 24 74 L24 70 L20 70 Q18 68 20 65Z' fill='white'/%3E%3Ccircle cx='33' cy='68' r='6' fill='%23007AFF'/%3E%3Ccircle cx='67' cy='68' r='6' fill='%23007AFF'/%3E%3Crect x='38' y='43' width='24' height='14' rx='3' fill='%23007AFF'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23007AFF'/%3E%3Cpath d='M20 65 L25 45 Q27 38 35 38 L65 38 Q73 38 75 45 L80 65 Q82 68 80 70 L76 70 L76 74 Q76 77 73 77 L68 77 Q65 77 65 74 L65 70 L35 70 L35 74 Q35 77 32 77 L27 77 Q24 77 24 74 L24 70 L20 70 Q18 68 20 65Z' fill='white'/%3E%3Ccircle cx='33' cy='68' r='6' fill='%23007AFF'/%3E%3Ccircle cx='67' cy='68' r='6' fill='%23007AFF'/%3E%3Crect x='38' y='43' width='24' height='14' rx='3' fill='%23007AFF'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<!-- CDN preconnects for fast resource loading -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="https://tile.openstreetmap.org">
+
+<!-- Fonts — swap so text shows immediately -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js" defer></script>
+
 <style>
   @keyframes gps-pulse {
     0%   { box-shadow: 0 0 0 0 rgba(52,199,89,0.6); }
@@ -29,10 +38,32 @@
   }
   .gps-dot { animation: gps-pulse 1.5s infinite; }
   .leaflet-container { font-family: Inter, -apple-system, sans-serif; }
+
+  /* Splash screen — shows instantly, hides once React mounts */
+  #mv-splash {
+    position: fixed; inset: 0; z-index: 99999;
+    background: #007AFF;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 16px;
+    font-family: -apple-system, sans-serif;
+  }
+  #mv-splash svg { opacity: 0.95; }
+  #mv-splash .mv-title { color: white; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  #mv-splash .mv-sub { color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 500; }
+  @keyframes mv-spin { to { transform: rotate(360deg); } }
+  #mv-splash .mv-loader {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    animation: mv-spin 0.8s linear infinite;
+    margin-top: 8px;
+  }
 </style>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<!-- Production React — ~10x smaller than dev builds -->
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
 <script type="text/babel">
 
 // iOS.jsx — Simplified iOS 26 (Liquid Glass) device frame
@@ -485,6 +516,19 @@ Object.assign(window, {
 </style>
 </head>
 <body>
+<!-- Splash screen: visible immediately, hidden when React mounts -->
+<div id="mv-splash">
+  <svg width="72" height="72" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" rx="22" fill="rgba(255,255,255,0.2)"/>
+    <path d="M20 65 L25 45 Q27 38 35 38 L65 38 Q73 38 75 45 L80 65 Q82 68 80 70 L76 70 L76 74 Q76 77 73 77 L68 77 Q65 77 65 74 L65 70 L35 70 L35 74 Q35 77 32 77 L27 77 Q24 77 24 74 L24 70 L20 70 Q18 68 20 65Z" fill="white"/>
+    <circle cx="33" cy="68" r="6" fill="#007AFF"/>
+    <circle cx="67" cy="68" r="6" fill="#007AFF"/>
+    <rect x="38" y="43" width="24" height="14" rx="3" fill="#007AFF"/>
+  </svg>
+  <div class="mv-title">MileVault Pro</div>
+  <div class="mv-sub">Mileage Tracking &amp; Tax Deductions</div>
+  <div class="mv-loader"></div>
+</div>
 <div id="root"></div>
 
 <script type="text/babel">
@@ -3692,12 +3736,25 @@ function TrackingScreen({ accent, onTripEnd, onCancel }) {
   const coordsRef   = useRef([]);
   const skipNextRef = useRef(false); // skip distance on first point after resume
 
+  // Wall-clock refs — immune to iOS background throttling
+  const startEpochRef  = useRef(null); // Date.now() when tracking began
+  const pausedMsRef    = useRef(0);    // total ms spent paused
+  const pauseStartRef  = useRef(null); // Date.now() when current pause began
+  const audioRef       = useRef(null); // silent AudioContext keep-alive
+
   const [status,    setStatus]    = useState('starting');
-  const [seconds,   setSeconds]   = useState(0);
+  const [seconds,   setSeconds]   = useState(0); // display value only
   const [distance,  setDistance]  = useState(0);
   const [accuracy,  setAccuracy]  = useState(null);
   const [startAddr, setStartAddr] = useState('Locating…');
   const [gpsError,  setGpsError]  = useState('');
+
+  // Derive elapsed seconds from wall clock, not an accumulating counter
+  const getElapsed = () => {
+    if (!startEpochRef.current) return 0;
+    const paused = pausedMsRef.current + (pauseStartRef.current ? Date.now() - pauseStartRef.current : 0);
+    return Math.floor((Date.now() - startEpochRef.current - paused) / 1000);
+  };
 
   const fmtTime = s => {
     const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
@@ -3744,9 +3801,10 @@ function TrackingScreen({ accent, onTripEnd, onCancel }) {
     }
   }, [accent]);
 
+  // Wall-clock timer — just triggers re-renders; value comes from getElapsed()
   const startTimer = () => {
     clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
+    timerRef.current = setInterval(() => setSeconds(getElapsed()), 1000);
   };
 
   const startWatch = () => {
@@ -3754,9 +3812,32 @@ function TrackingScreen({ accent, onTripEnd, onCancel }) {
     if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
     watchIdRef.current = navigator.geolocation.watchPosition(
       pos => updatePosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
-      () => setGpsError('GPS signal weak — keep screen on'),
+      () => setGpsError('GPS signal weak — move to open area'),
       { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
     );
+  };
+
+  // Silent audio keep-alive — prevents iOS from suspending GPS + JS when screen dims
+  const startAudioKeepAlive = () => {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.value = 0.00001; // completely inaudible
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      audioRef.current = { ctx, osc };
+    } catch(e) {}
+  };
+
+  const stopAudioKeepAlive = () => {
+    if (audioRef.current) {
+      try { audioRef.current.osc.stop(); audioRef.current.ctx.close(); } catch(e) {}
+      audioRef.current = null;
+    }
   };
 
   useEffect(() => {
@@ -3767,23 +3848,37 @@ function TrackingScreen({ accent, onTripEnd, onCancel }) {
       mapObj.current = map;
     }
 
-    // Wake lock — keep screen on during tracking
+    // Wake lock — keep screen on
     if ('wakeLock' in navigator) {
-      navigator.wakeLock.request('screen')
-        .then(lock => { wakeLockRef.current = lock; })
-        .catch(() => {});
+      navigator.wakeLock.request('screen').then(l => { wakeLockRef.current = l; }).catch(() => {});
     }
+
+    // Silent audio keep-alive — counters iOS background suspension
+    startAudioKeepAlive();
+
+    // Page visibility: when user comes back from background, sync timer display
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        setSeconds(getElapsed());
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
 
     if (!navigator.geolocation) {
       setGpsError('Location not available on this device');
-      setStatus('tracking'); startTimer(); return;
+      setStatus('tracking');
+      startEpochRef.current = Date.now();
+      startTimer();
+      return () => { clearInterval(timerRef.current); document.removeEventListener('visibilitychange', onVisible); stopAudioKeepAlive(); };
     }
 
-    // Get initial position quickly, then start watch
+    // Get initial position, then start continuous watch
     navigator.geolocation.getCurrentPosition(pos => {
       const { latitude: lat, longitude: lon, accuracy: acc } = pos.coords;
       updatePosition(lat, lon, acc);
       setStatus('tracking');
+      startEpochRef.current = Date.now();
+      pausedMsRef.current = 0;
       startTimer();
       startWatch();
       // Reverse geocode start address
@@ -3797,14 +3892,18 @@ function TrackingScreen({ accent, onTripEnd, onCancel }) {
         })
         .catch(() => setStartAddr(`${lat.toFixed(4)}, ${lon.toFixed(4)}`));
     }, () => {
-      setGpsError('Could not get location — time-only mode');
-      setStatus('tracking'); startTimer();
+      setGpsError('Could not get location — check location permissions');
+      setStatus('tracking');
+      startEpochRef.current = Date.now();
+      startTimer();
     }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
 
     return () => {
       clearInterval(timerRef.current);
       if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
       if (wakeLockRef.current) wakeLockRef.current.release().catch(() => {});
+      document.removeEventListener('visibilitychange', onVisible);
+      stopAudioKeepAlive();
     };
   }, []);
 
@@ -3813,9 +3912,15 @@ function TrackingScreen({ accent, onTripEnd, onCancel }) {
       clearInterval(timerRef.current);
       if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
+      pauseStartRef.current = Date.now(); // record when pause began
       setStatus('paused');
     } else {
-      skipNextRef.current = true; // don't count distance gap from pause
+      // Accumulate the paused duration then resume
+      if (pauseStartRef.current) {
+        pausedMsRef.current += Date.now() - pauseStartRef.current;
+        pauseStartRef.current = null;
+      }
+      skipNextRef.current = true; // don't count GPS gap from pause
       startTimer();
       startWatch();
       setStatus('tracking');
@@ -3826,7 +3931,8 @@ function TrackingScreen({ accent, onTripEnd, onCancel }) {
     clearInterval(timerRef.current);
     if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
     if (wakeLockRef.current) wakeLockRef.current.release().catch(() => {});
-    onTripEnd({ coords: coordsRef.current, distance, seconds, startAddr });
+    stopAudioKeepAlive();
+    onTripEnd({ coords: coordsRef.current, distance, seconds: getElapsed(), startAddr });
   };
 
   return (
@@ -4731,7 +4837,17 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+// Hide splash once React is ready to paint
+const _root = ReactDOM.createRoot(document.getElementById('root'));
+_root.render(<App/>);
+requestAnimationFrame(() => {
+  const splash = document.getElementById('mv-splash');
+  if (splash) {
+    splash.style.transition = 'opacity 0.35s ease';
+    splash.style.opacity = '0';
+    setTimeout(() => splash.remove(), 380);
+  }
+});
 </script>
 <script>
 if ('serviceWorker' in navigator) {
